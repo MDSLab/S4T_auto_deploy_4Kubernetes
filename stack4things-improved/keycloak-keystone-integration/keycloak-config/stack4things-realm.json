@@ -1,0 +1,193 @@
+{
+  "realm": "stack4things",
+  "enabled": true,
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "resetPasswordAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "rememberMe": true,
+  "internationalizationEnabled": false,
+
+  "groups": [
+    { "name": "s4t:testuser-iot-lab:admin_iot_project" },
+    { "name": "s4t:testuser-iot-lab:manager_iot_project" },
+    { "name": "s4t:testuser-iot-lab:user_iot" },
+    { "name": "s4t:testuser-ai-lab:admin_iot_project" },
+    { "name": "s4t:testuser-ai-lab:manager_iot_project" },
+    { "name": "s4t:testuser-ai-lab:user_iot" },
+    { "name": "s4t:pippo-smart-grid-lab:admin_iot_project" },
+    { "name": "s4t:pippo-smart-grid-lab:manager_iot_project" },
+    { "name": "s4t:pippo-smart-grid-lab:user_iot" },
+    {"name": "s4t:project-creator" }
+  ],
+ 
+
+  "clients": [
+    {
+      "clientId": "keystone",
+      "name": "Keystone",
+      "enabled": true,
+      "protocol": "openid-connect",
+
+      "publicClient": false,
+      "secret": "6OWR6HQAqfWQ2AES8S3uSsW3O52Mw4RJ",
+
+      "redirectUris": [
+        "http://localhost:5000/v3/auth/OS-FEDERATION/websso/mapped/redirect"
+      ],
+      "webOrigins": [],
+
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "protocolMappers": [
+      {
+        "name": "groups",
+        "protocol": "openid-connect",
+        "protocolMapper": "oidc-group-membership-mapper",
+        "consentRequired": false,
+        "config": {
+          "full.path": "false",
+          "id.token.claim": "true",
+          "access.token.claim": "true",
+          "userinfo.token.claim": "true",
+          "claim.name": "groups",
+          "jsonType.label": "String"
+        }
+      },
+      {
+        "name": "preferred_username",
+        "protocol": "openid-connect",
+        "protocolMapper": "oidc-usermodel-property-mapper",
+        "consentRequired": false,
+        "config": {
+          "user.attribute": "username",
+          "claim.name": "preferred_username",
+          "jsonType.label": "String",
+          "id.token.claim": "true",
+          "access.token.claim": "true",
+          "userinfo.token.claim": "true"
+        }
+      },
+      {
+        "name": "audience-keystone",
+        "protocol": "openid-connect",
+        "protocolMapper": "oidc-audience-mapper",
+        "consentRequired": false,
+        "config": {
+          "included.client.audience": "keystone",
+          "id.token.claim": "true",
+          "access.token.claim": "true"
+        }
+      }
+    ]
+    },
+
+    {
+      "clientId": "kubernetes",
+      "name": "Kubernetes",
+      "enabled": true,
+      "protocol": "openid-connect",
+
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "http://localhost:8000/*",
+        "http://127.0.0.1:8000/*",
+        "http://localhost:18000/*",
+        "http://127.0.0.1:18000/*"
+      ],
+      
+      "webOrigins": [
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+        "http://localhost:18000",
+        "http://127.0.0.1:18000"
+      ],
+
+      "fullScopeAllowed": true,
+
+      "protocolMappers": [
+        {
+          "name": "groups",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-group-membership-mapper",
+          "consentRequired": false,
+          "config": {
+            "full.path": "false",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "claim.name": "groups",
+            "jsonType.label": "String"
+          }
+        },
+        {
+          "name": "preferred_username",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-property-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "username",
+            "claim.name": "preferred_username",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        },
+        {
+          "name": "audience-kubernetes",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "kubernetes",
+            "id.token.claim": "true",
+            "access.token.claim": "true"
+          }
+        }
+      ]
+    }
+  ],
+
+  "users": [
+    {
+      "username": "testuser",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Test",
+      "lastName": "User",
+      "email": "testuser@example.com",
+      "groups": ["s4t:project-creator", "s4t:testuser-iot-lab:admin_iot_project", "s4t:testuser-ai-lab:admin_iot_project"],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "testpassword",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "pippo",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Pippo",
+      "lastName": "UserPippo",
+      "email": "pippo@example.com",
+      "groups": ["s4t:project-creator", "s4t:pippo-smart-grid-lab:admin_iot_project"],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "pippo",
+          "temporary": false
+        }
+      ]
+    }
+  ]
+}

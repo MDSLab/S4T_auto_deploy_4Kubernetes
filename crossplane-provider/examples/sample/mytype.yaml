@@ -1,0 +1,9 @@
+apiVersion: sample.s4t.crossplane.io/v1alpha1
+kind: MyType
+metadata:
+  name: example
+spec:
+  forProvider:
+    configurableField: test
+  providerConfigRef:
+    name: example

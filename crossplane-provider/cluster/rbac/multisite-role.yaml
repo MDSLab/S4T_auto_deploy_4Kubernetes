@@ -1,0 +1,263 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: s4t-multisite-admin
+  labels:
+    app: provider-s4t
+    component: multisite
+rules:
+# Permissions for Site resources
+- apiGroups:
+  - iot.s4t.crossplane.io
+  resources:
+  - sites
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - iot.s4t.crossplane.io
+  resources:
+  - sites/status
+  verbs:
+  - get
+  - update
+  - patch
+# Permissions for Device resources (site-scoped)
+- apiGroups:
+  - iot.s4t.crossplane.io
+  resources:
+  - devices
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - iot.s4t.crossplane.io
+  resources:
+  - devices/status
+  verbs:
+  - get
+  - update
+  - patch
+# Permissions for Service resources (site-scoped)
+- apiGroups:
+  - iot.s4t.crossplane.io
+  resources:
+  - services
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - iot.s4t.crossplane.io
+  resources:
+  - services/status
+  verbs:
+  - get
+  - update
+  - patch
+# Permissions for Plugin resources (site-scoped)
+- apiGroups:
+  - iot.s4t.crossplane.io
+  resources:
+  - plugins
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - iot.s4t.crossplane.io
+  resources:
+  - plugins/status
+  verbs:
+  - get
+  - update
+  - patch
+# Permissions for ProviderConfig (to manage site-specific configs)
+- apiGroups:
+  - s4t.crossplane.io
+  resources:
+  - providerconfigs
+  verbs:
+  - get
+  - list
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: s4t-multisite-viewer
+  labels:
+    app: provider-s4t
+    component: multisite
+rules:
+# Read-only permissions for Site resources
+- apiGroups:
+  - iot.s4t.crossplane.io
+  resources:
+  - sites
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - iot.s4t.crossplane.io
+  resources:
+  - sites/status
+  verbs:
+  - get
+# Read-only permissions for Device resources
+- apiGroups:
+  - iot.s4t.crossplane.io
+  resources:
+  - devices
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - iot.s4t.crossplane.io
+  resources:
+  - devices/status
+  verbs:
+  - get
+# Read-only permissions for Service resources
+- apiGroups:
+  - iot.s4t.crossplane.io
+  resources:
+  - services
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - iot.s4t.crossplane.io
+  resources:
+  - services/status
+  verbs:
+  - get
+# Read-only permissions for Plugin resources
+- apiGroups:
+  - iot.s4t.crossplane.io
+  resources:
+  - plugins
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - iot.s4t.crossplane.io
+  resources:
+  - plugins/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: s4t-multisite-operator
+  labels:
+    app: provider-s4t
+    component: multisite
+rules:
+# Permissions for Site resources (read and update, no delete)
+- apiGroups:
+  - iot.s4t.crossplane.io
+  resources:
+  - sites
+  verbs:
+  - get
+  - list
+  - watch
+  - update
+  - patch
+- apiGroups:
+  - iot.s4t.crossplane.io
+  resources:
+  - sites/status
+  verbs:
+  - get
+  - update
+  - patch
+# Permissions for Device resources
+- apiGroups:
+  - iot.s4t.crossplane.io
+  resources:
+  - devices
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - iot.s4t.crossplane.io
+  resources:
+  - devices/status
+  verbs:
+  - get
+  - update
+  - patch
+# Permissions for Service resources
+- apiGroups:
+  - iot.s4t.crossplane.io
+  resources:
+  - services
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - iot.s4t.crossplane.io
+  resources:
+  - services/status
+  verbs:
+  - get
+  - update
+  - patch
+# Permissions for Plugin resources
+- apiGroups:
+  - iot.s4t.crossplane.io
+  resources:
+  - plugins
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - iot.s4t.crossplane.io
+  resources:
+  - plugins/status
+  verbs:
+  - get
+  - update
+  - patch
+

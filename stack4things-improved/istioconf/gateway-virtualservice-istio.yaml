@@ -1,0 +1,45 @@
+apiVersion: networking.istio.io/v1
+kind: Gateway
+metadata:
+  name: iotronic-ui-gateway  
+spec:
+  selector:
+    istio: ingress  # Usa il controller Istio predefinito
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - "*"
+
+---
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: iotronic-ui  
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - iotronic-ui-gateway  # Collega al gateway appena creato
+  http:
+  - match:
+    - uri:
+        prefix: /iotronic-ui
+    rewrite:
+      uri: /
+    route:
+    - destination:
+        host: iotronic-ui  # Nome del servizio (assicurati che esista)
+        port:
+          number: 80  # Cambia la porta di destinazione, se necessario (ad esempio 8080, 80, ecc.)
+  - match:
+    - uri:
+        prefix: /horizon
+    route:
+    - destination:
+        host: iotronic-ui  
+        port:
+          number: 80
+

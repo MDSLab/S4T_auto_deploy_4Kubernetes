@@ -1,0 +1,17 @@
+---
+# Result è una risorsa read-only
+# Viene creata automaticamente da Stack4Things come risultato di operazioni asincrone
+# Questo esempio mostra come osservare un risultato esistente
+apiVersion: iot.s4t.crossplane.io/v1alpha1
+kind: Result
+metadata:
+  name: operation-result
+spec:
+  providerConfigRef:
+    name: s4t-provider-domain
+  forProvider:
+    # Risultati vengono tipicamente recuperati tramite request_uuid
+    requestUuid: "request-uuid-here"  # UUID della richiesta che ha generato il risultato
+    # Oppure direttamente tramite uuid se conosciuto
+    # uuid: "result-uuid-here"
+

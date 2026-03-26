@@ -1,0 +1,54 @@
+---
+apiVersion: iot.s4t.crossplane.io/v1alpha1
+kind: Site
+metadata:
+  name: site-production
+  annotations:
+    crossplane.io/external-name: site-production
+spec:
+  providerConfigRef:
+    name: s4t-provider-domain
+  forProvider:
+    name: Production Site
+    description: Main production site for IoT devices
+    location: "Data Center A, Building 1"
+    config:
+      region: "us-east-1"
+      timezone: "America/New_York"
+---
+apiVersion: iot.s4t.crossplane.io/v1alpha1
+kind: Site
+metadata:
+  name: site-staging
+  annotations:
+    crossplane.io/external-name: site-staging
+spec:
+  providerConfigRef:
+    name: s4t-provider-domain
+  forProvider:
+    name: Staging Site
+    description: Staging environment for testing
+    location: "Data Center B, Building 2"
+    parentSite: site-production  # Hierarchical multisite structure
+    config:
+      region: "us-west-2"
+      timezone: "America/Los_Angeles"
+---
+apiVersion: iot.s4t.crossplane.io/v1alpha1
+kind: Site
+metadata:
+  name: site-development
+  annotations:
+    crossplane.io/external-name: site-development
+spec:
+  providerConfigRef:
+    name: s4t-provider-domain
+  forProvider:
+    name: Development Site
+    description: Development environment
+    location: "Office Building"
+    parentSite: site-staging
+    config:
+      region: "local"
+      timezone: "UTC"
+

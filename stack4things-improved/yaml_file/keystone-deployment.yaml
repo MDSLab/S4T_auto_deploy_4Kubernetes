@@ -1,0 +1,166 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: keystone
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: keystone-db-data
+  namespace: keystone
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keystone-db
+  namespace: keystone
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: keystone-db
+  template:
+    metadata:
+      labels:
+        app: keystone-db
+    spec:
+      containers:
+      - name: mariadb
+        image: mariadb:10.6
+        env:
+        - name: MARIADB_ROOT_PASSWORD
+          value: "root_password"
+        - name: MARIADB_DATABASE
+          value: "keystone"
+        - name: MARIADB_USER
+          value: "keystone"
+        - name: MARIADB_PASSWORD
+          value: "password_keystone"
+        ports:
+        - containerPort: 3306
+        volumeMounts:
+        - name: mariadb-data
+          mountPath: /var/lib/mysql
+      volumes:
+      - name: mariadb-data
+        persistentVolumeClaim:
+          claimName: keystone-db-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: keystone-db
+  namespace: keystone
+spec:
+  type: ClusterIP
+  ports:
+  - port: 3306
+    targetPort: 3306
+    protocol: TCP
+  selector:
+    app: keystone-db
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keystone
+  namespace: keystone
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: keystone
+  template:
+    metadata:
+      labels:
+        app: keystone
+    spec:
+      containers:
+      - name: keystone
+        image: lucadagati/iotronic-keystone:latest
+        imagePullPolicy: IfNotPresent
+        command:
+        - /bin/sh
+        - -c
+        - |
+          set -e
+          keystone-manage db_sync
+          keystone-manage fernet_setup --keystone-user keystone --keystone-group keystone
+          keystone-manage credential_setup --keystone-user keystone --keystone-group keystone
+          keystone-manage bootstrap --bootstrap-password s4t \
+            --bootstrap-admin-url http://keystone.keystone.svc.cluster.local:5000/v3/ \
+            --bootstrap-internal-url http://keystone.keystone.svc.cluster.local:5000/v3/ \
+            --bootstrap-public-url http://keystone.keystone.svc.cluster.local:5000/v3/ \
+            --bootstrap-region-id RegionOne || true
+          exec apache2ctl -D FOREGROUND
+        ports:
+        - containerPort: 5000
+          name: api
+        env:
+        - name: DB_HOST
+          value: "keystone-db.keystone.svc.cluster.local"
+        - name: DB_PASSWORD
+          value: "password_keystone"
+        volumeMounts:
+        - name: keystone-config
+          mountPath: /etc/keystone/keystone.conf
+          subPath: keystone.conf
+        - name: keystone-mapping
+          mountPath: /etc/keystone/keystone-mapping.json
+          subPath: keystone-mapping.json
+        - name: keystone-sso
+          mountPath: /etc/keystone/sso_callback.html
+          subPath: sso_callback.html
+        - name: keystone-wsgi
+          mountPath: /etc/apache2/sites-enabled/keystone.conf
+          subPath: wsgi-keystone.conf
+        readinessProbe:
+          httpGet:
+            path: /v3
+            port: 5000
+          initialDelaySeconds: 60
+          timeoutSeconds: 5
+          failureThreshold: 12
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /v3
+            port: 5000
+          initialDelaySeconds: 180
+          timeoutSeconds: 5
+          failureThreshold: 6
+          periodSeconds: 10
+      volumes:
+      - name: keystone-config
+        configMap:
+          name: keystone-config
+      - name: keystone-mapping
+        configMap:
+          name: keystone-mapping
+      - name: keystone-sso
+        configMap:
+          name: keystone-sso
+      - name: keystone-wsgi
+        configMap:
+          name: keystone-wsgi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: keystone
+  namespace: keystone
+spec:
+  type: ClusterIP
+  ports:
+  - port: 5000
+    targetPort: 5000
+    protocol: TCP
+    name: api
+  selector:
+    app: keystone

@@ -1,0 +1,46 @@
+apiVersion: networking.istio.io/v1
+kind: Gateway
+metadata:
+  name: rabbitmq-gateway
+spec:
+  selector:
+    istio: ingress
+  servers:
+  - port:
+      number: 5672
+      name: amqp
+      protocol: TCP  # RabbitMQ AMQP usa TCP, non HTTP
+    hosts:
+    - "*"
+  - port:
+      number: 15672
+      name: management
+      protocol: HTTP
+    hosts:
+    - "*"
+---
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: rabbitmq
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - rabbitmq-gateway
+  tcp:
+  - match:
+    - port: 5672
+    route:
+    - destination:
+        host: rabbitmq
+        port:
+          number: 5672
+  http:
+  - match:
+    - port: 15672
+    route:
+    - destination:
+        host: rabbitmq
+        port:
+          number: 15672

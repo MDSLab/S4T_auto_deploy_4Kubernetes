@@ -1,0 +1,13 @@
+---
+apiVersion: iot.s4t.crossplane.io/v1alpha1
+kind: Fleet
+metadata:
+  name: production-fleet
+spec:
+  providerConfigRef:
+    name: s4t-provider-domain
+  forProvider:
+    name: Production Fleet
+    description: Fleet principale per dispositivi di produzione
+    # extra: {}  # Opzionale: metadati aggiuntivi in formato JSON
+

@@ -1,0 +1,42 @@
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"pkg.crossplane.io/v1","kind":"Provider","metadata":{"annotations":{"meta.crossplane.io/description":"A s4t that can be used to create Crossplane providers.\n","meta.crossplane.io/license":"Apache-2.0","meta.crossplane.io/maintainer":"Crossplane Maintainers \u003cinfo@crossplane.io\u003e","meta.crossplane.io/source":"github.com/crossplane/provider-s4t"},"name":"provider-s4t"},"spec":{"package":"docker.io/mariorossi851234/provider-s4t:latest","packagePullPolicy":"IfNotPresent"}}
+    meta.crossplane.io/description: |
+      A s4t that can be used to create Crossplane providers.
+    meta.crossplane.io/license: Apache-2.0
+    meta.crossplane.io/maintainer: Crossplane Maintainers <info@crossplane.io>
+    meta.crossplane.io/source: github.com/crossplane/provider-s4t
+  creationTimestamp: "2026-03-26T08:07:32Z"
+  generation: 3
+  name: provider-s4t
+  resourceVersion: "141593"
+  uid: 236e7623-2ff4-4f2b-ac81-1df62fd739cb
+spec:
+  ignoreCrossplaneConstraints: false
+  package: docker.io/mariorossi851234/provider-s4t:latest
+  packagePullPolicy: IfNotPresent
+  revisionActivationPolicy: Automatic
+  revisionHistoryLimit: 1
+  runtimeConfigRef:
+    apiVersion: pkg.crossplane.io/v1beta1
+    kind: DeploymentRuntimeConfig
+    name: provider-s4t-runtime
+  skipDependencyResolution: false
+status:
+  conditions:
+  - lastTransitionTime: "2026-03-26T08:17:31Z"
+    observedGeneration: 3
+    reason: HealthyPackageRevision
+    status: "True"
+    type: Healthy
+  - lastTransitionTime: "2026-03-26T08:17:24Z"
+    observedGeneration: 3
+    reason: ActivePackageRevision
+    status: "True"
+    type: Installed
+  currentIdentifier: docker.io/mariorossi851234/provider-s4t:latest
+  currentRevision: provider-s4t-15fde62d5c75
+  resolvedPackage: docker.io/mariorossi851234/provider-s4t:latest

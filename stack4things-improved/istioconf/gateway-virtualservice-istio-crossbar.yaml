@@ -1,0 +1,33 @@
+apiVersion: networking.istio.io/v1
+kind: Gateway
+metadata:
+  name: crossbar-gateway
+spec:
+  selector:
+    istio: ingress  
+  servers:
+  - port:
+      number: 8181
+      name: tcp
+      protocol: TCP
+    hosts:
+    - "*"
+
+---
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: crossbar
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - crossbar-gateway  # Collega al gateway appena creato
+  tcp:
+  - match:
+    - port: 8181
+    route:
+    - destination:
+        host: crossbar  # Nome del servizio (assicurati che esista)
+        port:
+          number: 8181  # Cambia la porta di destinazione, se necessario (ad esempio 8080, 80, ecc.)

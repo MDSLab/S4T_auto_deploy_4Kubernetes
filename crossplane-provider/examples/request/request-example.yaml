@@ -1,0 +1,14 @@
+---
+apiVersion: iot.s4t.crossplane.io/v1alpha1
+kind: Request
+metadata:
+  name: async-operation-request
+spec:
+  providerConfigRef:
+    name: s4t-provider-domain
+  forProvider:
+    destinationUuid: "board-uuid-here"  # UUID del board target
+    action: "ServiceEnable"  # Azione da eseguire (es: ServiceEnable, ServiceDisable, PluginAction, etc.)
+    type: 1  # Tipo di richiesta (opzionale)
+    # mainRequestUuid: "parent-request-uuid"  # Opzionale: UUID richiesta padre per operazioni composite
+

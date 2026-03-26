@@ -1,0 +1,14 @@
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: provider-s4t
+  annotations:
+    meta.crossplane.io/maintainer: Crossplane Maintainers <info@crossplane.io>
+    meta.crossplane.io/source: github.com/crossplane/provider-s4t
+    meta.crossplane.io/license: Apache-2.0
+    meta.crossplane.io/description: |
+      A s4t that can be used to create Crossplane providers.
+spec:
+  package: docker.io/mariorossi851234/provider-s4t:latest
+  packagePullPolicy: IfNotPresent 
+  

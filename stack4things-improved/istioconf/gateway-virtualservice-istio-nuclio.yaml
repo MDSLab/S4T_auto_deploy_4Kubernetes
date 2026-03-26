@@ -1,0 +1,37 @@
+apiVersion: networking.istio.io/v1
+kind: Gateway
+metadata:
+  name: nuclio-dashboard-gateway  
+spec:
+  selector:
+    istio: ingress  # Usa il controller Istio predefinito
+  servers:
+  - port:
+      number: 8070
+      name: http
+      protocol: HTTP
+    hosts:
+    - "*"
+ 
+---
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: nuclio-dashboard
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - nuclio-dashboard-gateway  # Collega al gateway appena creato
+  http:
+  - match:
+    - uri:
+        prefix: /
+    rewrite:
+      uri: /
+    route:
+    - destination:
+        host: nuclio-dashboard.nuclio.svc.cluster.local  # Nome del servizio (assicurati che esista)
+        port:
+          number: 8070  # Cambia la porta di destinazione, se necessario (ad esempio 8080, 80, ecc.)
+ 

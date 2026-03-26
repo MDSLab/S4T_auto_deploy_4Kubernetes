@@ -1,0 +1,14 @@
+---
+# Esempio completo di BoardServiceInjection
+# Espone un servizio su un board specifico
+apiVersion: iot.s4t.crossplane.io/v1alpha1
+kind: BoardServiceInjection
+metadata:
+  name: expose-service-on-board
+spec:
+  providerConfigRef:
+    name: s4t-provider-domain
+  forProvider:
+    boardUuid: "board-uuid-here"  # Sostituire con UUID board reale
+    serviceUuid: "service-uuid-here"  # Sostituire con UUID servizio reale
+

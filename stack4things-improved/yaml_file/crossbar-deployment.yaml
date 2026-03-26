@@ -1,0 +1,113 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.35.0 (9532ceef3)
+  labels:
+    io.kompose.service: crossbar
+  name: crossbar
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: crossbar
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert
+        kompose.version: 1.35.0 (9532ceef3)
+      labels:
+        io.kompose.service: crossbar
+    spec:
+      containers:
+        - args:
+            - |
+              echo "[INFO] Attesa dei certificati..."
+              while [ ! -f /node/.crossbar/ssl/crossbar.pem ] || [ ! -f /node/.crossbar/ssl/crossbar.key ]; do
+                sleep 2
+              done
+              echo "[INFO] Certificati trovati!"
+
+              echo "[INFO] Scrittura configurazione Crossbar..."
+              cat <<EOF > /node/.crossbar/config.json
+              {
+                 "version": 2,
+                 "controller": {},
+                 "workers": [
+                    {
+                       "type": "router",
+                       "realms": [
+                          {
+                             "name": "s4t",
+                             "roles": [
+                                {
+                                   "name": "anonymous",
+                                   "permissions": [
+                                      {
+                                         "uri": "*",
+                                         "allow": {
+                                              "publish": true,
+                                              "subscribe": true,
+                                              "call": true,
+                                              "register": true
+                                          }
+                                      }
+                                   ]
+                                }
+                             ]
+                          }
+                       ],
+                       "transports": [
+                          {
+                              "type": "websocket",
+                              "endpoint": {
+                                "type": "tcp",
+                                "port": 8181,
+                                "tls": {
+                                      "chain_certificates": ["/node/.crossbar/ssl/iotronic_CA.pem"],
+                                      "key": "/node/.crossbar/ssl/crossbar.key",
+                                      "certificate": "/node/.crossbar/ssl/crossbar.pem"
+                                }
+                              },
+                              "options":{
+                                      "enable_webstatus": true,
+                                      "fail_by_drop": true,
+                                      "open_handshake_timeout": 5000,
+                                      "close_handshake_timeout": 2000,
+                                      "auto_ping_interval": 50000,
+                                      "auto_ping_timeout": 10000,
+                                      "auto_ping_size": 15
+                              }
+                          }
+                       ]
+                    }
+                 ]
+              }
+              EOF
+
+              echo "[INFO] Avvio di Crossbar..."
+              crossbar start
+          command:
+            - /bin/sh
+            - -c
+          image: crossbario/crossbar
+          name: crossbar
+          ports:
+            - containerPort: 8181
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /node/.crossbar/ssl
+              name: iotronic-ssl
+            - mountPath: /node/.crossbar
+              name: crossbar-data
+      restartPolicy: Always
+      volumes:
+        - name: iotronic-ssl
+          persistentVolumeClaim:
+            claimName: iotronic-ssl
+        - name: crossbar-data
+          persistentVolumeClaim:
+            claimName: crossbar-data

@@ -1,0 +1,9 @@
+apiVersion: s4t.s4t.io/v1alpha1
+kind: Project
+metadata:
+  name: my-s4t-project
+  labels:
+    app.kubernetes.io/name: s4t-rbac-operator
+spec:
+  projectName: my-project
+  owner: ""  # Will be automatically populated by mutating webhook with authenticated user

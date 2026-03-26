@@ -1,0 +1,20 @@
+apiVersion: iot.s4t.crossplane.io/v1alpha1
+kind: Device
+metadata:
+  name: my-device
+  labels:
+    environment: production
+spec:
+  providerConfigRef:
+    name: default
+  forProvider:
+    name: "My-IoT-Device"
+    code: "Test-code"
+    type: "gateway"
+    location:
+      - latitude: "37.7749"
+        longitude: "-122.4194"
+        altitude: "30"
+  providerConfigRef:
+    name: s4t-provider-domain
+  deletionPolicy: Delete

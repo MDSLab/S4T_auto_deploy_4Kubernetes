@@ -1,0 +1,48 @@
+---
+# Example: Device associated with a specific site
+apiVersion: iot.s4t.crossplane.io/v1alpha1
+kind: Device
+metadata:
+  name: device-production-001
+  labels:
+    site: site-production
+  annotations:
+    crossplane.io/external-name: device-production-001
+spec:
+  providerConfigRef:
+    name: s4t-provider-domain
+  forProvider:
+    code: PROD-001
+    name: Production Device 001
+    type: raspberry-pi
+    agent: wagent
+    location:
+      - latitude: "40.7128"
+        longitude: "-74.0060"
+        altitude: "10"
+    services:
+      - service-monitoring
+      - service-logging
+---
+# Example: Device in staging site
+apiVersion: iot.s4t.crossplane.io/v1alpha1
+kind: Device
+metadata:
+  name: device-staging-001
+  labels:
+    site: site-staging
+  annotations:
+    crossplane.io/external-name: device-staging-001
+spec:
+  providerConfigRef:
+    name: s4t-provider-domain
+  forProvider:
+    code: STAG-001
+    name: Staging Device 001
+    type: raspberry-pi
+    agent: wagent
+    location:
+      - latitude: "34.0522"
+        longitude: "-118.2437"
+        altitude: "100"
+

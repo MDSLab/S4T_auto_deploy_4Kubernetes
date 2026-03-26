@@ -1,0 +1,15 @@
+---
+apiVersion: iot.s4t.crossplane.io/v1alpha1
+kind: Webservice
+metadata:
+  name: my-webservice
+spec:
+  providerConfigRef:
+    name: s4t-provider-domain
+  forProvider:
+    name: My WebService
+    port: 8080
+    boardUuid: "board-uuid-here"  # Sostituire con UUID board reale
+    secure: false
+    # extra: {}  # Opzionale: metadati aggiuntivi
+

@@ -1,0 +1,94 @@
+---
+# Example: Grant multisite admin access to a specific user
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: s4t-multisite-admin-user-example
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: s4t-multisite-admin
+subjects:
+- kind: User
+  name: admin@example.com
+  apiGroup: rbac.authorization.k8s.io
+---
+# Example: Grant multisite viewer access to a group
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: s4t-multisite-viewer-group-example
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: s4t-multisite-viewer
+subjects:
+- kind: Group
+  name: s4t-viewers
+  apiGroup: rbac.authorization.k8s.io
+---
+# Example: Grant operator access to a service account
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: s4t-ci-operator
+  namespace: crossplane-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: s4t-multisite-operator-ci
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: s4t-multisite-operator
+subjects:
+- kind: ServiceAccount
+  name: s4t-ci-operator
+  namespace: crossplane-system
+  apiGroup: ""
+---
+# Example: Namespace-scoped role for site-specific operations
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: s4t-site-operator
+  namespace: default
+rules:
+- apiGroups:
+  - iot.s4t.crossplane.io
+  resources:
+  - devices
+  - services
+  - plugins
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - iot.s4t.crossplane.io
+  resources:
+  - sites
+  verbs:
+  - get
+  - list
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: s4t-site-operator-binding
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: s4t-site-operator
+subjects:
+- kind: ServiceAccount
+  name: site-operator
+  namespace: default
+

@@ -1,0 +1,36 @@
+apiVersion: networking.istio.io/v1
+kind: Gateway
+metadata:
+  name: lightning-rod-gateway  
+spec:
+  selector:
+    istio: ingress  # Usa il controller Istio predefinito
+  servers:
+  - port:
+      number: 1474
+      name: http
+      protocol: HTTP
+    hosts:
+    - "*"
+
+---
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: lightning-rod  
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - lightning-rod-gateway  # Collega al gateway appena creato
+  http:
+  - match:
+    - uri:
+        prefix: /
+    rewrite:
+      uri: /
+    route:
+    - destination:
+        host: lightning-rod  # Nome del servizio (assicurati che esista)
+        port:
+          number: 1474  # Cambia la porta di destinazione, se necessario (ad esempio 8080, 80, ecc.)
