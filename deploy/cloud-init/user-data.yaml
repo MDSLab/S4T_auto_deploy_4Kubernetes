@@ -35,7 +35,7 @@ write_files:
       LOG=/var/log/s4t-setup.log
       MARKER=/var/lib/s4t-setup.done
       REPO_DIR=/opt/unified-deploy
-      REPO_URL="https://github.com/lucadagati/s4t_crossplane_deployment.git"
+      REPO_URL="https://github.com/MDSLab/S4T_auto_deploy_4Kubernetes"
       REPO_BRANCH="main"
       SETUP_FLAGS=""
 
