@@ -1,0 +1,71 @@
+#cloud-config
+package_update: true
+package_upgrade: false
+packages:
+  - openssl
+  - golang-go
+  - python3
+  - python3-apt
+  - python3-pip
+  - python3-venv
+  - git
+  - curl
+  - ca-certificates
+  - jq
+  - make
+  - gcc
+  - g++
+  - tar
+  - unzip
+  - iproute2
+  - net-tools
+  - lsb-release
+  - gnupg
+  - apt-transport-https
+  - software-properties-common
+
+write_files:
+  - path: /usr/local/bin/s4t-bootstrap.sh
+    permissions: "0755"
+    owner: root:root
+    content: |
+      #!/usr/bin/env bash
+      set -euo pipefail
+
+      LOG=/var/log/s4t-setup.log
+      MARKER=/var/lib/s4t-setup.done
+      REPO_DIR=/opt/unified-deploy
+      REPO_URL="https://github.com/lucadagati/s4t_crossplane_deployment.git"
+      REPO_BRANCH="main"
+      SETUP_FLAGS=""
+
+      mkdir -p "$(dirname "$MARKER")"
+      mkdir -p /opt
+
+      if [ -f "$MARKER" ]; then
+        echo "[INFO] Setup gia completato: marker presente in $MARKER" | tee -a "$LOG"
+        exit 0
+      fi
+
+      if [ ! -d "$REPO_DIR/.git" ]; then
+        git clone --branch "$REPO_BRANCH" "$REPO_URL" "$REPO_DIR"
+      else
+        cd "$REPO_DIR"
+        git fetch --all --prune
+        git checkout "$REPO_BRANCH"
+        git pull --ff-only
+      fi
+
+      cd "$REPO_DIR"
+      chmod +x ops/setup-all.sh
+
+      echo "[INFO] Avvio setup-all.sh" | tee -a "$LOG"
+      bash ops/setup-all.sh $SETUP_FLAGS 2>&1 | tee -a "$LOG"
+
+      touch "$MARKER"
+      echo "[INFO] Deploy completato" | tee -a "$LOG"
+
+runcmd:
+  - [ bash, -lc, "/usr/local/bin/s4t-bootstrap.sh" ]
+
+final_message: "Bootstrap Stack4Things completato. Log: /var/log/s4t-setup.log"

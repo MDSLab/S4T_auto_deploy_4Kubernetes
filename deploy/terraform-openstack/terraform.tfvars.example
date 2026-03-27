@@ -1,0 +1,12 @@
+auth_url    = "https://openstack.example.com:5000/v3"
+tenant_name = "my-project"
+user_name   = "my-user"
+password    = "change-me"
+region      = "RegionOne"
+
+instance_name   = "s4t-deploy-vm"
+image_name      = "ubuntu-22.04"
+flavor_name     = "m1.large"
+network_name    = "private-net"
+key_pair        = "my-ssh-key"
+security_groups = ["default", "ssh", "k8s"]

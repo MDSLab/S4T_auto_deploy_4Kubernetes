@@ -1,0 +1,10 @@
+docker.io/mariorossi851234/provider-s4t:latest
+docker.io/mariorossi851234/s4t-rbac-operator
+docker.io/mariorossi851234/s4t-rbac-operator:latest
+lucadagati/iotronic-conductor:latest
+lucadagati/iotronic-keystone
+lucadagati/iotronic-keystone:latest
+lucadagati/iotronic-ui:latest
+lucadagati/iotronic-wagent:latest
+lucadagati/iotronic-wstun:latest
+lucadagati/lrod:compose

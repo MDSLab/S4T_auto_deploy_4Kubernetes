@@ -1,0 +1,51 @@
+---
+- name: Provisiona Stack4Things sulla VM
+  hosts: s4t
+  become: true
+  vars:
+    repo_url: "https://github.com/lucadagati/s4t_crossplane_deployment.git"
+    repo_branch: "main"
+    repo_dir: "/opt/unified-deploy"
+    marker_file: "/var/lib/s4t-setup.done"
+    setup_flags: ""
+
+  tasks:
+    - name: Installa prerequisiti apt
+      ansible.builtin.apt:
+        name:
+          - git
+          - curl
+          - ca-certificates
+        state: present
+        update_cache: true
+
+    - name: Clona o aggiorna repository
+      ansible.builtin.git:
+        repo: "{{ repo_url }}"
+        dest: "{{ repo_dir }}"
+        version: "{{ repo_branch }}"
+        update: true
+
+    - name: Verifica marker deploy
+      ansible.builtin.stat:
+        path: "{{ marker_file }}"
+      register: setup_marker
+
+    - name: Esegue setup-all.sh
+      ansible.builtin.shell: |
+        set -euo pipefail
+        chmod +x ops/setup-all.sh
+        bash ops/setup-all.sh {{ setup_flags }} 2>&1 | tee -a /var/log/s4t-setup.log
+      args:
+        chdir: "{{ repo_dir }}"
+        executable: /bin/bash
+      when: not setup_marker.stat.exists
+
+    - name: Crea marker deploy completato
+      ansible.builtin.file:
+        path: "{{ marker_file }}"
+        state: touch
+        owner: root
+        group: root
+        mode: "0644"
+      when: not setup_marker.stat.exists
