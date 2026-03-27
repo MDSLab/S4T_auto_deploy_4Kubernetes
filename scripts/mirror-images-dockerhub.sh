@@ -14,7 +14,7 @@ OUTPUT_FILE=""
 FROM_REPO=false
 DRY_RUN=false
 ONLY_USERS=""
-declare -A SEEN_DESTS=()
+SEEN_DESTS_FILE=""
 
 usage() {
   cat <<'EOF'
@@ -270,11 +270,11 @@ mirror_image() {
   repo="$(normalize_target_repo "${no_source_namespace}")"
   local dst="docker.io/${DEST_NAMESPACE}/${repo}:${tag}"
 
-  if [[ -n "${SEEN_DESTS[${dst}]+x}" ]]; then
+  if grep -Fxq "${dst}" "${SEEN_DESTS_FILE}"; then
     log "Skip duplicato destinazione: ${dst}"
     return 0
   fi
-  SEEN_DESTS["${dst}"]=1
+  echo "${dst}" >> "${SEEN_DESTS_FILE}"
 
   local src_transport
   if docker image inspect "${ref}" >/dev/null 2>&1; then
@@ -359,6 +359,9 @@ main() {
   if [[ "${DRY_RUN}" == false ]]; then
     require_cmd skopeo
   fi
+
+  SEEN_DESTS_FILE="$(mktemp)"
+  trap 'rm -f "${SEEN_DESTS_FILE}"' EXIT
 
   prepare_inventory
 
