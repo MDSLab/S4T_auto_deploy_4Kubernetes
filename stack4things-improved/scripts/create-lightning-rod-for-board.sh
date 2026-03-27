@@ -86,7 +86,7 @@ spec:
     spec:
       containers:
       - name: lightning-rod
-        image: lucadagati/lrod:compose
+        image: docker.io/mdslab/lrod:compose
         ports:
         - containerPort: 1474
           protocol: TCP

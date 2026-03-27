@@ -17,7 +17,7 @@ echo "  DEPLOYMENT RBAC OPERATOR"
 echo "=========================================="
 echo ""
 
-TARGET_IMAGE_REPO="docker.io/mariorossi851234/s4t-rbac-operator:latest"
+TARGET_IMAGE_REPO="docker.io/mdslab/s4t-rbac-operator:latest"
 IMG="${IMG:-$TARGET_IMAGE_REPO}"
 BUILD_IMAGE="${RBAC_OPERATOR_BUILD_IMAGE:-false}"
 
