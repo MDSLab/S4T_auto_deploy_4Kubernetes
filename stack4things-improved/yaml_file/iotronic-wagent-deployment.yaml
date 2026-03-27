@@ -33,21 +33,21 @@ spec:
                 exec /usr/local/bin/iotronic-wamp-agent --config-file /etc/iotronic/iotronic.conf
           env:
             - name: DB_CONNECTION_STRING
-              value: mysql+pymysql://iotronic:unime@iotronic-db/iotronic
+              value: mysql+pymysql://${IOTRONIC_DB_USER}:${IOTRONIC_DB_PASSWORD}@${IOTRONIC_DB_HOST}/${IOTRONIC_DB_NAME}
             - name: DB_HOST
-              value: iotronic-db
+              value: ${IOTRONIC_DB_HOST}
             - name: MYSQL_ROOT_PASSWORD
-              value: s4t
+              value: ${IOTRONIC_DB_ROOT_PASSWORD}
             - name: OS_AUTH_URL
               value: http://keystone:5000/v3
             - name: OS_PASSWORD
-              value: s4t
+              value: ${STACK4THINGS_ADMIN_PASSWORD}
             - name: OS_PROJECT_DOMAIN_NAME
               value: Default
             - name: OS_PROJECT_NAME
               value: admin
             - name: OS_USERNAME
-              value: admin
+              value: ${STACK4THINGS_ADMIN_USER}
             - name: OS_USER_DOMAIN_NAME
               value: Default
           image: lucadagati/iotronic-wagent:latest

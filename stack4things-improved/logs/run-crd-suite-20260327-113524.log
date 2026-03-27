@@ -1,0 +1,10 @@
+[0;34m[INFO][0m Log file: /home/salvo/Scrivania/s4t_unified-deploy/stack4things-improved/scripts/../logs/run-crd-suite-20260327-113524.log
+[0;34m[INFO][0m Plugin name: auto-discovery da creazione live
+
+[0;34m[INFO][0m === Cleanup board esistenti ===
+
+==========================================
+  PULIZIA BOARD E LIGHTNING ROD
+==========================================
+
+Sei sicuro di voler cancellare tutte le board? (yes/no): 🗑️  Cancellazione Device Crossplane...

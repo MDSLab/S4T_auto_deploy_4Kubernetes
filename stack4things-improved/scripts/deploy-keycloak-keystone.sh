@@ -10,6 +10,22 @@ NC='\033[0m'
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BASE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
+ENV_FILE="${BASE_DIR}/../.env"
+if [ ! -f "$ENV_FILE" ]; then
+  echo -e "${RED}ERROR: .env not found at: $ENV_FILE${NC}"
+  exit 1
+fi
+
+set -a
+# shellcheck disable=SC1090
+source "$ENV_FILE"
+set +a
+
+if ! command -v envsubst >/dev/null 2>&1; then
+  echo -e "${RED}ERROR: envsubst not found (install gettext-base)${NC}"
+  exit 1
+fi
+
 echo ""
 echo "=========================================="
 echo "  DEPLOYMENT KEYCLOAK E KEYSTONE"
@@ -92,7 +108,7 @@ debug = false
 log_dir = /var/log/keystone
 
 [database]
-connection = mysql+pymysql://keystone:password_keystone@keystone-db.keystone.svc.cluster.local/keystone
+connection = mysql+pymysql://${KEYSTONE_DB_USER}:${KEYSTONE_DB_PASSWORD}@${KEYSTONE_DB_HOST}/${KEYSTONE_DB_NAME}
 
 [identity]
 default_domain_id = default
@@ -177,9 +193,16 @@ if [ ! -f "$KEYSTONE_CONFIG_DIR/wsgi-keystone.conf" ]; then
 EOF
 fi
 
+RENDER_DIR="${BASE_DIR}/.tmp/rendered-keycloak-keystone"
+mkdir -p "$RENDER_DIR"
+
+KEYSTONE_ENV_SUBST_VARS='$KEYSTONE_DB_HOST $KEYSTONE_DB_NAME $KEYSTONE_DB_USER $KEYSTONE_DB_PASSWORD $OIDC_CLIENT_SECRET $OIDC_CRYPTO_PASSPHRASE'
+envsubst "$KEYSTONE_ENV_SUBST_VARS" < "$KEYSTONE_CONFIG_DIR/keystone.conf" > "$RENDER_DIR/keystone.conf"
+envsubst "$KEYSTONE_ENV_SUBST_VARS" < "$KEYSTONE_CONFIG_DIR/wsgi-keystone.conf" > "$RENDER_DIR/wsgi-keystone.conf"
+
 kubectl create namespace keystone --dry-run=client -o yaml | kubectl apply -f -
 kubectl create configmap keystone-config -n keystone \
-    --from-file="$KEYSTONE_CONFIG_DIR/keystone.conf" \
+    --from-file="$RENDER_DIR/keystone.conf" \
     --dry-run=client -o yaml | kubectl apply -f -
 kubectl create configmap keystone-mapping -n keystone \
     --from-file="$KEYSTONE_CONFIG_DIR/keystone-mapping.json" \
@@ -188,20 +211,26 @@ kubectl create configmap keystone-sso -n keystone \
     --from-file="$KEYSTONE_CONFIG_DIR/sso_callback.html" \
     --dry-run=client -o yaml | kubectl apply -f -
 kubectl create configmap keystone-wsgi -n keystone \
-    --from-file="$KEYSTONE_CONFIG_DIR/wsgi-keystone.conf" \
+    --from-file="$RENDER_DIR/wsgi-keystone.conf" \
     --dry-run=client -o yaml | kubectl apply -f -
 
 echo -e "${GREEN}✔ ConfigMap Keystone creati${NC}"
 
 # 3. Deploy Keycloak
 echo "3. Deploy Keycloak..."
-kubectl apply -f "$BASE_DIR/yaml_file/keycloak-deployment.yaml"
+
+YAML_RENDERED_DIR="${RENDER_DIR}/rendered-yaml_file"
+mkdir -p "$YAML_RENDERED_DIR"
+YAML_ENV_SUBST_VARS='$STACK4THINGS_ADMIN_USER $STACK4THINGS_ADMIN_PASSWORD $KEYCLOAK_ADMIN_USERNAME $KEYCLOAK_ADMIN_PASSWORD $KEYCLOAK_DB_PASSWORD $KEYSTONE_DB_ROOT_PASSWORD $KEYSTONE_DB_PASSWORD'
+envsubst "$YAML_ENV_SUBST_VARS" < "$BASE_DIR/yaml_file/keycloak-deployment.yaml" > "$YAML_RENDERED_DIR/keycloak-deployment.yaml"
+kubectl apply -f "$YAML_RENDERED_DIR/keycloak-deployment.yaml"
 kubectl wait --for=condition=available deployment/keycloak -n keycloak --timeout=300s || true
 echo -e "${GREEN}✔ Keycloak deployato${NC}"
 
 # 4. Deploy Keystone
 echo "4. Deploy Keystone..."
-kubectl apply -f "$BASE_DIR/yaml_file/keystone-deployment.yaml"
+envsubst "$YAML_ENV_SUBST_VARS" < "$BASE_DIR/yaml_file/keystone-deployment.yaml" > "$YAML_RENDERED_DIR/keystone-deployment.yaml"
+kubectl apply -f "$YAML_RENDERED_DIR/keystone-deployment.yaml"
 kubectl wait --for=condition=available deployment/keystone -n keystone --timeout=300s || true
 echo -e "${GREEN}✔ Keystone deployato${NC}"
 

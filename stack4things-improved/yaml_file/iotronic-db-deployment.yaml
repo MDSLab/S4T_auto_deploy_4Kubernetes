@@ -52,13 +52,13 @@ spec:
               echo "MariaDB è pronto. Verifica database..."
 
               if mysql -uroot -p${MYSQL_ROOT_PASSWORD} -e "USE ${MYSQL_DATABASE};" 2>/dev/null; then
-                  echo "Il database 'unime' esiste già."
+                  echo "Il database '${MYSQL_DATABASE}' esiste già."
               else
                   echo "Creazione del database e dell'utente..."
                   mysql -uroot -p${MYSQL_ROOT_PASSWORD} <<EOF
               CREATE DATABASE IF NOT EXISTS ${MYSQL_DATABASE};
               CREATE USER IF NOT EXISTS '${MYSQL_USER}'@'%' IDENTIFIED BY '${MYSQL_PASSWORD}';
-              CREATE USER 'root'@'%' IDENTIFIED BY 'unime';
+              CREATE USER 'root'@'%' IDENTIFIED BY '${MYSQL_ROOT_PASSWORD}';
               GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' WITH GRANT OPTION;
               GRANT ALL PRIVILEGES ON keystone.* TO 'root'@'%';
               GRANT ALL PRIVILEGES ON iotronic.* TO 'root'@'%';
@@ -70,10 +70,10 @@ spec:
               echo "Allineamento utenti DB richiesti da Stack4Things..."
               mysql -uroot -p${MYSQL_ROOT_PASSWORD} <<EOF
               CREATE DATABASE IF NOT EXISTS iotronic;
-              CREATE USER IF NOT EXISTS 'iotronic'@'%' IDENTIFIED BY 'unime';
-              CREATE USER IF NOT EXISTS 'iotronic'@'localhost' IDENTIFIED BY 'unime';
-              GRANT ALL PRIVILEGES ON iotronic.* TO 'iotronic'@'%';
-              GRANT ALL PRIVILEGES ON iotronic.* TO 'iotronic'@'localhost';
+              CREATE USER IF NOT EXISTS '${MYSQL_USER}'@'%' IDENTIFIED BY '${MYSQL_PASSWORD}';
+              CREATE USER IF NOT EXISTS '${MYSQL_USER}'@'localhost' IDENTIFIED BY '${MYSQL_PASSWORD}';
+              GRANT ALL PRIVILEGES ON iotronic.* TO '${MYSQL_USER}'@'%';
+              GRANT ALL PRIVILEGES ON iotronic.* TO '${MYSQL_USER}'@'localhost';
               FLUSH PRIVILEGES;
               EOF
 
@@ -84,13 +84,13 @@ spec:
             - -c
           env:
             - name: MYSQL_DATABASE
-              value: unime
+              value: ${IOTRONIC_DB_NAME}
             - name: MYSQL_PASSWORD
-              value: s4t
+              value: ${IOTRONIC_DB_PASSWORD}
             - name: MYSQL_ROOT_PASSWORD
-              value: unime
+              value: ${IOTRONIC_DB_ROOT_PASSWORD}
             - name: MYSQL_USER
-              value: admin
+              value: ${IOTRONIC_DB_USER}
           image: mariadb:focal
           livenessProbe:
             exec:
@@ -101,7 +101,7 @@ spec:
                 - localhost
                 - -u
                 - root
-                - -punime
+                - -p${IOTRONIC_DB_ROOT_PASSWORD}
             failureThreshold: 5
             initialDelaySeconds: 40
             periodSeconds: 10
@@ -112,9 +112,9 @@ spec:
               protocol: TCP
           volumeMounts:
             - mountPath: /var/lib/mysql
-              name: unime-iotronic-db-data
+              name: iotronic-db-data
       restartPolicy: Always
       volumes:
-        - name: unime-iotronic-db-data
+        - name: iotronic-db-data
           persistentVolumeClaim:
-            claimName: unime-iotronic-db-data
+            claimName: iotronic-db-data

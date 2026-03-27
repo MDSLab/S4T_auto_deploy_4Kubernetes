@@ -2,6 +2,19 @@
 
 set -euo pipefail
 
+ENV_FILE="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/.env"
+if [ -f "$ENV_FILE" ]; then
+  set -a
+  # shellcheck disable=SC1090
+  source "$ENV_FILE"
+  set +a
+fi
+
+: "${IOTRONIC_DB_PASSWORD:?IOTRONIC_DB_PASSWORD is required in .env}"
+: "${IOTRONIC_DB_ROOT_PASSWORD:?IOTRONIC_DB_ROOT_PASSWORD is required in .env}"
+: "${STACK4THINGS_ADMIN_USER:?STACK4THINGS_ADMIN_USER is required in .env}"
+: "${STACK4THINGS_ADMIN_PASSWORD:?STACK4THINGS_ADMIN_PASSWORD is required in .env}"
+
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
@@ -49,7 +62,7 @@ if [ -z "$BOARD_UUID" ]; then
     # Try to get from database
     DB_POD=$(kubectl get pod -n default -l io.kompose.service=iotronic-db -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
     if [ -n "$DB_POD" ]; then
-        BOARD_UUID=$(kubectl exec -n default "$DB_POD" -- mysql -uroot -ps4t iotronic -Nse "SELECT uuid FROM boards WHERE code='$BOARD_CODE' LIMIT 1;" 2>/dev/null || echo "")
+        BOARD_UUID=$(kubectl exec -n default "$DB_POD" -- mysql -uroot -p"${IOTRONIC_DB_ROOT_PASSWORD}" iotronic -Nse "SELECT uuid FROM boards WHERE code='$BOARD_CODE' LIMIT 1;" 2>/dev/null || echo "")
     fi
 fi
 
@@ -73,7 +86,7 @@ if [ -z "$PLUGIN_UUID" ] || [ "$PLUGIN_UUID" == "null" ]; then
     # Try to get from database
     DB_POD=$(kubectl get pod -n default -l io.kompose.service=iotronic-db -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
     if [ -n "$DB_POD" ]; then
-        PLUGIN_UUID=$(kubectl exec -n default "$DB_POD" -- mysql -h127.0.0.1 -uiotronic -punime iotronic -Nse "SELECT uuid FROM plugins WHERE name='$PLUGIN_NAME_DB' LIMIT 1;" 2>/dev/null || echo "")
+        PLUGIN_UUID=$(kubectl exec -n default "$DB_POD" -- mysql -h127.0.0.1 -uiotronic -p"${IOTRONIC_DB_PASSWORD}" iotronic -Nse "SELECT uuid FROM plugins WHERE name='$PLUGIN_NAME_DB' LIMIT 1;" 2>/dev/null || echo "")
     fi
 fi
 
@@ -102,9 +115,9 @@ import os
 from keystoneauth1.identity import v3
 from keystoneauth1 import session
 auth = v3.Password(auth_url='http://keystone.default.svc.cluster.local:5000/v3',
-                   username='admin',
-                   password='s4t',
-                   project_name='admin',
+                   username='${STACK4THINGS_ADMIN_USER}',
+                   password='${STACK4THINGS_ADMIN_PASSWORD}',
+                   project_name='${STACK4THINGS_ADMIN_USER}',
                    user_domain_name='default',
                    project_domain_name='default')
 sess = session.Session(auth=auth)

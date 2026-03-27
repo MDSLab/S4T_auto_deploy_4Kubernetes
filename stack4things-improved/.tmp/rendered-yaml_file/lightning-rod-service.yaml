@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.35.0 (9532ceef3)
+  labels:
+    io.kompose.service: lightning-rod
+  name: lightning-rod
+spec:
+  ports:
+    - name: "1474"
+      port: 1474
+      targetPort: 1474
+  selector:
+    io.kompose.service: lightning-rod

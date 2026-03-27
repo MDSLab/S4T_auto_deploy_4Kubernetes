@@ -2,7 +2,7 @@ apiVersion: v1
 data:
   iotronic.conf: |
     [DEFAULT]
-    transport_url = rabbit://openstack:unime@rabbitmq
+    transport_url = rabbit://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASSWORD}@rabbitmq
 
     debug=True
     proxy=nginx
@@ -29,7 +29,7 @@ data:
 
 
     [database]
-    connection = mysql+pymysql://iotronic:unime@iotronic-db/iotronic
+    connection = mysql+pymysql://${IOTRONIC_DB_USER}:${IOTRONIC_DB_PASSWORD}@${IOTRONIC_DB_HOST}/${IOTRONIC_DB_NAME}
 
     [keystone_authtoken]
     www_authenticate_uri = http://keystone:5000
@@ -40,7 +40,7 @@ data:
     user_domain_id = default
     project_name = service
     username = iotronic
-    password = unime
+    password = ${IOTRONIC_DB_PASSWORD}
 
 
     [neutron]
@@ -52,7 +52,7 @@ data:
     region_name = RegionOne
     project_name = service
     username = neutron
-    password = netrn_pwd
+    password = ${NEUTRON_PASSWORD}
     retries = 3
     project_domain_id= default
 
@@ -66,7 +66,7 @@ data:
     region_name = RegionOne
     project_name = service
     username = designate
-    password = password
+    password = ${DESIGNATE_PASSWORD}
     retries = 3
     project_domain_id= default
 

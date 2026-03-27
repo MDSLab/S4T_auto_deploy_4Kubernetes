@@ -30,7 +30,7 @@ spec:
               set -x
               apt-get update && apt-get install -y mysql-client nano;
               echo '[INFO] Attesa del database MySQL...';
-              until mysql -h iotronic-db -uiotronic -punime -e 'SELECT 1' >/dev/null 2>&1; do
+              until mysql -h ${IOTRONIC_DB_HOST} -u${IOTRONIC_DB_USER} -p${IOTRONIC_DB_PASSWORD} -e 'SELECT 1' >/dev/null 2>&1; do
                 echo '[INFO] Database non ancora pronto, riprovo...';
                 sleep 5;
               done;
@@ -64,27 +64,27 @@ spec:
               done
           env:
             - name: DB_CONNECTION_STRING
-              value: mysql+pymysql://iotronic:unime@iotronic-db/iotronic
+              value: mysql+pymysql://${IOTRONIC_DB_USER}:${IOTRONIC_DB_PASSWORD}@${IOTRONIC_DB_HOST}/${IOTRONIC_DB_NAME}
             - name: DB_HOST
-              value: iotronic-db
+              value: ${IOTRONIC_DB_HOST}
             - name: IOTRONIC_DBPASS
-              value: unime
+              value: ${IOTRONIC_DB_PASSWORD}
             - name: IOTRONIC_DB_NAME
-              value: iotronic
+              value: ${IOTRONIC_DB_NAME}
             - name: IOTRONIC_DB_USER
-              value: iotronic
+              value: ${IOTRONIC_DB_USER}
             - name: MYSQL_ROOT_PASSWORD
-              value: s4t
+              value: ${IOTRONIC_DB_ROOT_PASSWORD}
             - name: OS_AUTH_URL
               value: http://keystone.keystone.svc.cluster.local:5000/v3
             - name: OS_PASSWORD
-              value: s4t
+              value: ${STACK4THINGS_ADMIN_PASSWORD}
             - name: OS_PROJECT_DOMAIN_NAME
               value: Default
             - name: OS_PROJECT_NAME
               value: admin
             - name: OS_USERNAME
-              value: admin
+              value: ${STACK4THINGS_ADMIN_USER}
             - name: OS_USER_DOMAIN_NAME
               value: Default
           image: lucadagati/iotronic-conductor:latest

@@ -159,7 +159,7 @@ services:
     volumes:
       - unime_iotronic_db_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-punime"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${IOTRONIC_DB_ROOT_PASSWORD}"]
       interval: 10s
       retries: 5
       start_period: 40s
@@ -200,7 +200,7 @@ services:
             mysql -uroot -p$${MYSQL_ROOT_PASSWORD} <<EOF
         CREATE DATABASE IF NOT EXISTS $${MYSQL_DATABASE};
         CREATE USER IF NOT EXISTS '$${MYSQL_USER}'@'%' IDENTIFIED BY '$${MYSQL_PASSWORD}';
-        CREATE USER 'root'@'%' IDENTIFIED BY 'unime';
+        CREATE USER 'root'@'%' IDENTIFIED BY '${IOTRONIC_DB_ROOT_PASSWORD}';
         GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' WITH GRANT OPTION;
         GRANT ALL PRIVILEGES ON keystone.* TO 'root'@'%';
         GRANT ALL PRIVILEGES ON iotronic.* TO 'root'@'%';
@@ -220,7 +220,7 @@ services:
     restart: always
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASSWORD}
     ports:
       - "5672:5672"
       - "15672:15672"
@@ -253,7 +253,7 @@ services:
         sleep 5;
       done;
       echo "Configurazione dell'utente openstack...";
-      rabbitmqctl add_user openstack unime;
+      rabbitmqctl add_user ${RABBITMQ_DEFAULT_USER} ${RABBITMQ_DEFAULT_PASSWORD};
       rabbitmqctl set_permissions openstack '.*' '.*' '.*';
       rabbitmqctl set_user_tags openstack administrator;
       echo 'Utente openstack creato con successo.';
@@ -312,18 +312,18 @@ services:
       chown -R keystone:keystone /var/log/keystone
       chmod 777 /var/log/keystone/keystone-manage.log;
       export DB_CONNECTION_STRING=\"${DB_CONNECTION_KEYSTONE}\";
-      until mysql -h iotronic-db -uroot -punime -e 'SELECT 1' >/dev/null 2>&1; do
+      until mysql -h iotronic-db -uroot -p${IOTRONIC_DB_ROOT_PASSWORD} -e 'SELECT 1' >/dev/null 2>&1; do
         echo '[INFO] Database non ancora pronto, riprovo...';
         sleep 5;
       done;
       echo '[INFO] Database pronto!';
 
       echo '[INFO] Configurazione del database Keystone...';
-      mysql -u root -punime -h iotronic-db <<EOF
+      mysql -u root -p${IOTRONIC_DB_ROOT_PASSWORD} -h iotronic-db <<EOF
       CREATE DATABASE IF NOT EXISTS keystone;
       CREATE DATABASE IF NOT EXISTS iotronic;
-      CREATE USER IF NOT EXISTS 'keystone'@'%' IDENTIFIED BY 'unime';
-      CREATE USER IF NOT EXISTS 'iotronic'@'%' IDENTIFIED BY 'unime';
+      CREATE USER IF NOT EXISTS 'keystone'@'%' IDENTIFIED BY '${IOTRONIC_DB_PASSWORD}';
+      CREATE USER IF NOT EXISTS 'iotronic'@'%' IDENTIFIED BY '${IOTRONIC_DB_PASSWORD}';
       GRANT ALL PRIVILEGES ON keystone.* TO 'keystone'@'%';
       GRANT ALL PRIVILEGES ON iotronic.* TO 'iotronic'@'%';
       FLUSH PRIVILEGES;
@@ -355,7 +355,7 @@ services:
       su -s /bin/sh -c 'keystone-manage db_sync' keystone;
 
       echo '[INFO] Bootstrap di Keystone...';
-      su -s /bin/sh -c 'keystone-manage bootstrap --bootstrap-password s4t --bootstrap-admin-url http://keystone:5000/v3 --bootstrap-internal-url http://keystone:5000/v3 --bootstrap-public-url http://keystone:5000/v3 --bootstrap-region-id RegionOne' keystone;
+      su -s /bin/sh -c 'keystone-manage bootstrap --bootstrap-password ${STACK4THINGS_ADMIN_PASSWORD} --bootstrap-admin-url http://keystone:5000/v3 --bootstrap-internal-url http://keystone:5000/v3 --bootstrap-public-url http://keystone:5000/v3 --bootstrap-region-id RegionOne' keystone;
 
       echo '[INFO] Verifica e avvio di Apache...';
       if ! pgrep -x "apache2" > /dev/null; then
@@ -369,7 +369,7 @@ services:
       su -s /bin/sh -c 'openstack project create --domain default --description \"Service Project\" service' keystone;
       su -s /bin/sh -c 'openstack service create iot --name Iotronic' keystone;
       echo '[INFO] Iotronic User Create...';
-      su -s /bin/sh -c 'openstack user create --password unime iotronic' keystone;
+      su -s /bin/sh -c 'openstack user create --password ${IOTRONIC_DB_PASSWORD} iotronic' keystone;
       
       echo '[INFO] Iotronic roles...';
       su -s /bin/sh -c 'openstack role add --project service --user iotronic admin' keystone;
@@ -435,7 +435,7 @@ services:
       /bin/bash -c "
         apt-get update && apt-get install -y mysql-client nano;
         echo '[INFO] Attesa del database MySQL...';
-        until mysql -h iotronic-db -uiotronic -punime -e 'SELECT 1' >/dev/null 2>&1; do
+        until mysql -h iotronic-db -uiotronic -p${IOTRONIC_DB_PASSWORD} -e 'SELECT 1' >/dev/null 2>&1; do
           echo '[INFO] Database non ancora pronto, riprovo...';
           sleep 5;
         done;

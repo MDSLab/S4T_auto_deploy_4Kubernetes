@@ -122,8 +122,8 @@ kubectl port-forward -n default svc/iotronic-ui 8070:80
 ### 2. Login Credentials
 
 ```
-Username: admin
-Password: s4t
+Username: (da `.env`: `STACK4THINGS_ADMIN_USER`)
+Password: (da `.env`: `STACK4THINGS_ADMIN_PASSWORD`)
 ```
 
 ## Troubleshooting
@@ -299,7 +299,7 @@ kubectl delete namespace keycloak keystone crossplane-system istio-system metall
 
 1. **Access the Dashboard**
    - URL: http://<IP>:8070/horizon
-   - Credentials: admin / s4t
+   - Credentials: (da `.env`: `STACK4THINGS_ADMIN_USER` / `STACK4THINGS_ADMIN_PASSWORD`)
 
 2. **Create Lightning Rods**
    ```bash

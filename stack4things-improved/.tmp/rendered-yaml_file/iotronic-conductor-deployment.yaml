@@ -1,0 +1,107 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.35.0 (9532ceef3)
+  labels:
+    io.kompose.service: iotronic-conductor
+  name: iotronic-conductor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: iotronic-conductor
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert
+        kompose.version: 1.35.0 (9532ceef3)
+      labels:
+        io.kompose.service: iotronic-conductor
+    spec:
+      containers:
+        - args:
+            - /bin/bash
+            - -c
+            - |
+              set -x
+              apt-get update && apt-get install -y mysql-client nano;
+              echo '[INFO] Attesa del database MySQL...';
+              until mysql -h iotronic-db -uiotronic -punime -e 'SELECT 1' >/dev/null 2>&1; do
+                echo '[INFO] Database non ancora pronto, riprovo...';
+                sleep 5;
+              done;
+              iotronic-dbsync;
+              echo '[INFO] Configurazione dei permessi sui log...';
+              chown -R iotronic:iotronic /var/log/iotronic;
+              echo '[INFO] Avvio di Iotronic Conductor...';
+              echo '[INFO] End of configuration!';
+              
+              touch /tmp/conductor-setup-done;
+              
+              # Avvia Apache in background
+              /usr/sbin/apache2ctl -D FOREGROUND &
+              APACHE_PID=$!
+              
+              # Avvia iotronic-conductor
+              /usr/local/bin/iotronic-conductor 2>&1 &
+              CONDUCTOR_PID=$!
+              
+              # Mantieni il container vivo monitorando i processi
+              while sleep 60; do
+                if ! ps -p $APACHE_PID > /dev/null 2>&1; then
+                  echo "[ERROR] Apache è terminato, esco..."
+                  exit 1;
+                fi
+                if ! ps -p $CONDUCTOR_PID > /dev/null 2>&1; then
+                  echo "[WARN] iotronic-conductor è terminato, riavvio...";
+                  /usr/local/bin/iotronic-conductor 2>&1 &
+                  CONDUCTOR_PID=$!;
+                fi
+              done
+          env:
+            - name: DB_CONNECTION_STRING
+              value: mysql+pymysql://iotronic:unime@iotronic-db/iotronic
+            - name: DB_HOST
+              value: iotronic-db
+            - name: IOTRONIC_DBPASS
+              value: unime
+            - name: IOTRONIC_DB_NAME
+              value: iotronic
+            - name: IOTRONIC_DB_USER
+              value: iotronic
+            - name: MYSQL_ROOT_PASSWORD
+              value: s4t
+            - name: OS_AUTH_URL
+              value: http://keystone.keystone.svc.cluster.local:5000/v3
+            - name: OS_PASSWORD
+              value: s4t
+            - name: OS_PROJECT_DOMAIN_NAME
+              value: Default
+            - name: OS_PROJECT_NAME
+              value: admin
+            - name: OS_USERNAME
+              value: admin
+            - name: OS_USER_DOMAIN_NAME
+              value: Default
+          image: lucadagati/iotronic-conductor:latest
+          name: iotronic-conductor
+          ports:
+            - containerPort: 8812
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /etc/iotronic
+              name: iotronic-conductor-cm0
+            - mountPath: /var/log/iotronic
+              name: iotronic-logs
+      restartPolicy: Always
+      volumes:
+        - configMap:
+            name: iotronic-conductor-cm0
+          name: iotronic-conductor-cm0
+        - name: iotronic-logs
+          persistentVolumeClaim:
+            claimName: iotronic-logs

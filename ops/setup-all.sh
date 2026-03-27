@@ -87,6 +87,20 @@ KEYCLOAK_KEYSTONE_DIR="${STACK4THINGS_DIR}/keycloak-keystone-integration"
 KEYSTONE_CONFIG_DIR="${KEYCLOAK_KEYSTONE_DIR}/keystone-config"
 KEYCLOAK_CONFIG_DIR="${KEYCLOAK_KEYSTONE_DIR}/keycloak-config"
 
+ENV_FILE="${SCRIPT_DIR}/../.env"
+if [ ! -f "$ENV_FILE" ]; then
+  fail "ERROR: .env not found at: $ENV_FILE"
+fi
+
+set -a
+# shellcheck disable=SC1090
+source "$ENV_FILE"
+set +a
+
+if ! command -v envsubst >/dev/null 2>&1; then
+  fail "ERROR: envsubst not found (install gettext-base)"
+fi
+
 ### Validate repository structure ###
 section "Validating Repository Structure"
 
@@ -276,7 +290,7 @@ REALM_FILE="${KEYCLOAK_CONFIG_DIR}/stack4things-realm.json"
 if [ ! -f "$REALM_FILE" ]; then
   step "5" "Creating Keycloak realm configuration..."
   mkdir -p "$(dirname "$REALM_FILE")"
-  cat > "$REALM_FILE" << 'EOF'
+  cat > "$REALM_FILE" << EOF
 {
   "realm": "stack4things",
   "enabled": true,
@@ -294,13 +308,13 @@ if [ ! -f "$REALM_FILE" ]; then
   ],
   "users": [
     {
-      "username": "admin",
+      "username": "${KEYCLOAK_ADMIN_USERNAME}",
       "enabled": true,
       "emailVerified": true,
       "credentials": [
         {
           "type": "password",
-          "value": "admin"
+          "value": "${KEYCLOAK_ADMIN_PASSWORD}"
         }
       ],
       "realmRoles": ["default-roles-stack4things", "offline_access", "uma_authorization"]
@@ -359,10 +373,17 @@ create_keystone_configmap() {
   done
 }
 
-create_keystone_configmap "keystone-config" "${KEYSTONE_CONFIG_DIR}/keystone.conf"
+RENDERED_KEYSTONE_DIR="${SCRIPT_DIR}/.tmp/rendered-keystone-config"
+mkdir -p "$RENDERED_KEYSTONE_DIR"
+
+KEYSTONE_ENV_SUBST_VARS='$KEYSTONE_DB_HOST $KEYSTONE_DB_NAME $KEYSTONE_DB_USER $KEYSTONE_DB_PASSWORD $OIDC_CLIENT_SECRET $OIDC_CRYPTO_PASSPHRASE'
+envsubst "$KEYSTONE_ENV_SUBST_VARS" < "${KEYSTONE_CONFIG_DIR}/keystone.conf" > "${RENDERED_KEYSTONE_DIR}/keystone.conf"
+envsubst "$KEYSTONE_ENV_SUBST_VARS" < "${KEYSTONE_CONFIG_DIR}/wsgi-keystone.conf" > "${RENDERED_KEYSTONE_DIR}/wsgi-keystone.conf"
+
+create_keystone_configmap "keystone-config" "${RENDERED_KEYSTONE_DIR}/keystone.conf"
 create_keystone_configmap "keystone-mapping" "${KEYSTONE_CONFIG_DIR}/keystone-mapping.json"
 create_keystone_configmap "keystone-sso" "${KEYSTONE_CONFIG_DIR}/sso_callback.html"
-create_keystone_configmap "keystone-wsgi" "${KEYSTONE_CONFIG_DIR}/wsgi-keystone.conf"
+create_keystone_configmap "keystone-wsgi" "${RENDERED_KEYSTONE_DIR}/wsgi-keystone.conf"
 
 ### Step 7: Run Preflight Checks ###
 section "Running Pre-Deployment Checks"
@@ -522,13 +543,13 @@ fi
 
 echo ""
 echo -e "${GREEN}Dashboard Credentials:${NC}"
-echo "  Username: ${YELLOW}admin${NC}"
-echo "  Password: ${YELLOW}s4t${NC}"
+echo "  Username: ${YELLOW}${STACK4THINGS_ADMIN_USER}${NC}"
+echo "  Password: ${YELLOW}${STACK4THINGS_ADMIN_PASSWORD}${NC}"
 echo ""
 
 echo -e "${GREEN}Default Keycloak Credentials:${NC}"
-echo "  Username: ${YELLOW}admin${NC}"
-echo "  Password: ${YELLOW}admin${NC}"
+echo "  Username: ${YELLOW}${KEYCLOAK_ADMIN_USERNAME}${NC}"
+echo "  Password: ${YELLOW}${KEYCLOAK_ADMIN_PASSWORD}${NC}"
 echo ""
 
 echo -e "${GREEN}What's Next:${NC}"

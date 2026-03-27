@@ -113,7 +113,7 @@ make clean              # Rimuovi deployment
 - [ ] Aspetta 5-15 minuti
 - [ ] `./verify-deployment.sh`
 - [ ] Apri URL in browser
-- [ ] Login con admin/s4t
+- [ ] Login con le credenziali presenti in `.env`
 - [ ] ✅ Fatto!
 
 ---

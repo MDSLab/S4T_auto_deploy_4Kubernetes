@@ -86,9 +86,9 @@ reconcile_iot_catalog() {
     for attempt in $(seq 1 "$retries"); do
       if kubectl exec -n "$keystone_namespace" deploy/keystone -- env \
         OS_AUTH_URL="http://127.0.0.1:5000/v3" \
-        OS_USERNAME="admin" \
-        OS_PASSWORD="s4t" \
-        OS_PROJECT_NAME="admin" \
+        OS_USERNAME="${STACK4THINGS_ADMIN_USER}" \
+        OS_PASSWORD="${STACK4THINGS_ADMIN_PASSWORD}" \
+        OS_PROJECT_NAME="${STACK4THINGS_ADMIN_USER}" \
         OS_USER_DOMAIN_NAME="$domain" \
         OS_PROJECT_DOMAIN_NAME="$domain" \
         OS_IDENTITY_API_VERSION="3" \
@@ -233,6 +233,24 @@ main() {
   SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
   CERT_DIR="${SCRIPT_DIR}/keycloak-keystone-integration/keycloak-config/certs"
 
+  # Load local credentials file (must be present).
+  ENV_FILE="${SCRIPT_DIR}/../.env"
+  if [ ! -f "$ENV_FILE" ]; then
+    echo -e "${RED}ERROR: .env not found at: $ENV_FILE${NC}"
+    echo -e "${YELLOW}Create it or copy from .env.example${NC}"
+    exit 1
+  fi
+
+  set -a
+  # shellcheck disable=SC1090
+  source "$ENV_FILE"
+  set +a
+
+  if ! command -v envsubst >/dev/null 2>&1; then
+    echo -e "${RED}ERROR: envsubst not found (install gettext-base)${NC}"
+    exit 1
+  fi
+
   detect_ip_range
   ensure_kubeconfig
 
@@ -310,8 +328,20 @@ EOF
   #################################
   step "3" "Deploying Stack4Things Core Services"
   #################################
-  echo "📦 Applying core services from 'yaml_file/'..."
-  kubectl apply -f yaml_file/
+  echo "📦 Rendering + applying core services from 'yaml_file/'..."
+  RENDERED_DIR="${SCRIPT_DIR}/.tmp/rendered-yaml_file"
+  rm -rf "$RENDERED_DIR"
+  mkdir -p "$RENDERED_DIR"
+
+  # Restrict envsubst substitutions to placeholders we introduced.
+  ENV_SUBST_VARS='$STACK4THINGS_ADMIN_USER $STACK4THINGS_ADMIN_PASSWORD $KEYCLOAK_ADMIN_USERNAME $KEYCLOAK_ADMIN_PASSWORD $KEYCLOAK_DB_PASSWORD $KEYSTONE_DB_ROOT_PASSWORD $KEYSTONE_DB_PASSWORD $IOTRONIC_DB_HOST $IOTRONIC_DB_NAME $IOTRONIC_DB_USER $IOTRONIC_DB_PASSWORD $IOTRONIC_DB_ROOT_PASSWORD $RABBITMQ_DEFAULT_USER $RABBITMQ_DEFAULT_PASSWORD $NEUTRON_PASSWORD $DESIGNATE_PASSWORD'
+
+  for f in "${SCRIPT_DIR}"/yaml_file/*.yaml; do
+    [ -f "$f" ] || continue
+    envsubst "$ENV_SUBST_VARS" < "$f" > "${RENDERED_DIR}/$(basename "$f")"
+  done
+
+  kubectl apply -f "$RENDERED_DIR"
 
   echo "⏳ Waiting for services to be ready..."
   # Wait for critical services
@@ -625,8 +655,8 @@ EOF
 {
   "endpoint": "http://${IOTRONIC_SERVICE}:${IOTRONIC_PORT}",
   "keystoneEndpoint": "http://${KEYSTONE_SERVICE}:${KEYSTONE_PORT}/v3",
-  "username": "admin",
-  "password": "s4t",
+  "username": "${STACK4THINGS_ADMIN_USER}",
+  "password": "${STACK4THINGS_ADMIN_PASSWORD}",
   "domain": "default",
   "project": "admin"
 }
@@ -832,13 +862,13 @@ EOF
   fi
   echo ""
   echo "Dashboard credentials:"
-  echo "  Username: admin"
-  echo "  Password: s4t"
+  echo "  Username: ${STACK4THINGS_ADMIN_USER}"
+  echo "  Password: ${STACK4THINGS_ADMIN_PASSWORD}"
   echo ""
   echo "Keycloak Admin Console:"
   echo "  URL: http://<node-ip>:<nodeport>/ (port forwarded from keycloak service)"
-  echo "  Username: admin"
-  echo "  Password: admin"
+  echo "  Username: ${KEYCLOAK_ADMIN_USERNAME}"
+  echo "  Password: ${KEYCLOAK_ADMIN_PASSWORD}"
   echo ""
   echo "Note: settings.json is automatically configured with:"
   echo "  - Board code (from OpenStack registration)"

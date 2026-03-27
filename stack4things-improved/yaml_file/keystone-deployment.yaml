@@ -35,13 +35,13 @@ spec:
         image: mariadb:10.6
         env:
         - name: MARIADB_ROOT_PASSWORD
-          value: "root_password"
+          value: "${KEYSTONE_DB_ROOT_PASSWORD}"
         - name: MARIADB_DATABASE
           value: "keystone"
         - name: MARIADB_USER
           value: "keystone"
         - name: MARIADB_PASSWORD
-          value: "password_keystone"
+          value: "${KEYSTONE_DB_PASSWORD}"
         ports:
         - containerPort: 3306
         volumeMounts:
@@ -93,7 +93,7 @@ spec:
           keystone-manage db_sync
           keystone-manage fernet_setup --keystone-user keystone --keystone-group keystone
           keystone-manage credential_setup --keystone-user keystone --keystone-group keystone
-          keystone-manage bootstrap --bootstrap-password s4t \
+          keystone-manage bootstrap --bootstrap-password ${STACK4THINGS_ADMIN_PASSWORD} \
             --bootstrap-admin-url http://keystone.keystone.svc.cluster.local:5000/v3/ \
             --bootstrap-internal-url http://keystone.keystone.svc.cluster.local:5000/v3/ \
             --bootstrap-public-url http://keystone.keystone.svc.cluster.local:5000/v3/ \
@@ -106,7 +106,7 @@ spec:
         - name: DB_HOST
           value: "keystone-db.keystone.svc.cluster.local"
         - name: DB_PASSWORD
-          value: "password_keystone"
+          value: "${KEYSTONE_DB_PASSWORD}"
         volumeMounts:
         - name: keystone-config
           mountPath: /etc/keystone/keystone.conf

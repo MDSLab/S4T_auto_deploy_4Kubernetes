@@ -175,7 +175,7 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 #EMAIL_HOST = 'smtp.my-company.com'
 #EMAIL_PORT = 25
 #EMAIL_HOST_USER = 'djangomail'
-#EMAIL_HOST_PASSWORD = 'top-secret!'
+#EMAIL_HOST_PASSWORD = '${EMAIL_HOST_PASSWORD}'
 
 # For multiple regions uncomment this configuration, and add (endpoint, title).
 #AVAILABLE_REGIONS = [

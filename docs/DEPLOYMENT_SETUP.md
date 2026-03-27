@@ -235,7 +235,7 @@ The scripts include comprehensive error handling:
 ⚠️ **Important**: This is for development/testing. For production:
 
 1. **Replace self-signed certificates** with valid ones
-2. **Change default passwords**: admin/s4t, admin/admin
+2. **Change default passwords**: values from `.env`
 3. **Configure RBAC** properly
 4. **Use network policies** to restrict traffic
 5. **Enable authentication** for all services

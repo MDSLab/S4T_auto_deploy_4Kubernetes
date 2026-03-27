@@ -1,0 +1,253 @@
+[0;34m[INFO][0m Log file: /home/salvo/Scrivania/s4t_unified-deploy/stack4things-improved/scripts/../logs/run-crd-suite-20260327-111641.log
+[0;34m[INFO][0m Plugin name: test-plugin-crd
+
+[0;34m[INFO][0m === Cleanup board esistenti ===
+
+==========================================
+  PULIZIA BOARD E LIGHTNING ROD
+==========================================
+
+Sei sicuro di voler cancellare tutte le board? (yes/no): 🗑️  Cancellazione Device Crossplane...
+No resources found
+🗑️  Cancellazione Lightning Rod pods...
+No resources found
+🗑️  Cancellazione Lightning Rod deployments...
+No resources found
+🗑️  Pulizia database...
+ERROR 1146 (42S02) at line 1: Table 'iotronic.wamp_sessions' doesn't exist
+command terminated with exit code 1
+[1;33m⚠️  Tabella wamp_sessions non trovata o già vuota[0m
+ERROR 1146 (42S02) at line 6: Table 'iotronic.injected_plugins' doesn't exist
+command terminated with exit code 1
+[1;33m⚠️  Errore nella cancellazione di plugin/servizi[0m
+🔧 Correzione wampagents (solo uno attivo)...
+[0;32m✔ Database pulito e wagents corretti[0m
+
+==========================================
+[0;32m✅ PULIZIA COMPLETATA[0m
+==========================================
+
+[0;32m[OK][0m Cleanup board esistenti completato
+
+[0;34m[INFO][0m === Creazione board CRD ===
+
+==========================================
+  CREAZIONE 5 BOARD
+==========================================
+
+📦 Creazione 5 board tramite Crossplane...
+device.iot.s4t.crossplane.io/test-board-1 created
+device.iot.s4t.crossplane.io/test-board-2 created
+device.iot.s4t.crossplane.io/test-board-3 created
+device.iot.s4t.crossplane.io/test-board-4 created
+device.iot.s4t.crossplane.io/test-board-5 created
+
+⏳ Attesa creazione board (15 secondi)...
+
+📊 Verifica board create:
+NAME           BOARD NAME   BOARD STATUS   BOARD LOCATION   READY   SYNCED   EXTERNAL-NAME   AGE
+test-board-1                                                True    True     test-board-1    26s
+test-board-2                                                True    True     test-board-2    24s
+test-board-3                                                True    True     test-board-3    22s
+test-board-4                                                True    True     test-board-4    20s
+test-board-5                                                True    True     test-board-5    17s
+
+📋 Board codes:
+  - TEST-BOARD-1774606626-1
+  - TEST-BOARD-1774606628-2
+  - TEST-BOARD-1774606630-3
+  - TEST-BOARD-1774606632-4
+  - TEST-BOARD-1774606634-5
+
+⚡ Creazione Lightning Rod per ogni board...
+
+  Creazione Lightning Rod per: TEST-BOARD-1774606626-1
+Lightning Rod creato per board: TEST-BOARD-1774606626-1
+
+Per vedere i log:
+  kubectl logs -n default -l board-code=TEST-BOARD-1774606626-1 -f
+
+
+  Creazione Lightning Rod per: TEST-BOARD-1774606628-2
+Lightning Rod creato per board: TEST-BOARD-1774606628-2
+
+Per vedere i log:
+  kubectl logs -n default -l board-code=TEST-BOARD-1774606628-2 -f
+
+
+  Creazione Lightning Rod per: TEST-BOARD-1774606630-3
+Lightning Rod creato per board: TEST-BOARD-1774606630-3
+
+Per vedere i log:
+  kubectl logs -n default -l board-code=TEST-BOARD-1774606630-3 -f
+
+
+  Creazione Lightning Rod per: TEST-BOARD-1774606632-4
+Lightning Rod creato per board: TEST-BOARD-1774606632-4
+
+Per vedere i log:
+  kubectl logs -n default -l board-code=TEST-BOARD-1774606632-4 -f
+
+
+  Creazione Lightning Rod per: TEST-BOARD-1774606634-5
+Lightning Rod creato per board: TEST-BOARD-1774606634-5
+
+Per vedere i log:
+  kubectl logs -n default -l board-code=TEST-BOARD-1774606634-5 -f
+
+
+⏳ Attesa pod Lightning Rod ready...
+pod/lightning-rod-test-board-1774606626-1-55465d8bcb-wq4kx condition met
+pod/lightning-rod-test-board-1774606628-2-6969b56b-vjzn6 condition met
+pod/lightning-rod-test-board-1774606630-3-64bd579998-t6t8w condition met
+pod/lightning-rod-test-board-1774606632-4-c5bb56bbd-sztsr condition met
+pod/lightning-rod-test-board-1774606634-5-5b7d89c66-79lr2 condition met
+
+🔧 Verifica wampagent attivo...
+  Correzione wagents duplicati...
+  Wagent attivo: iotronic-wagent-6c7cc4798b-m56fl
+  Aggiornamento board con wagent attivo...
+[0;32m  ✅ Board configurate con wagent attivo[0m
+  Riavvio conductor...
+pod "iotronic-conductor-5f78786544-mzz5x" deleted from default namespace
+
+⏳ Attesa connessione board (60 secondi)...
+
+==========================================
+  STATO FINALE
+==========================================
+
+📊 Board e stato:
+code	status	agent
+TEST-BOARD-1774606626-1	registered	iotronic-wagent-6c7cc4798b-m56fl
+TEST-BOARD-1774606628-2	registered	iotronic-wagent-6c7cc4798b-m56fl
+TEST-BOARD-1774606630-3	registered	iotronic-wagent-6c7cc4798b-m56fl
+TEST-BOARD-1774606632-4	registered	iotronic-wagent-6c7cc4798b-m56fl
+TEST-BOARD-1774606634-5	registered	iotronic-wagent-6c7cc4798b-m56fl
+
+📈 Statistiche:
+  Board totali: 5
+  Board online: 0
+
+==========================================
+[0;32m✅ COMPLETATO[0m
+==========================================
+
+Le board dovrebbero connettersi e diventare online entro pochi minuti.
+Verifica lo stato dalla dashboard o con:
+  kubectl exec -n default <db-pod> -- mysql -uroot -ps4t iotronic -e "SELECT code, status FROM boards;"
+
+[0;32m[OK][0m Creazione board CRD completato
+[0;34m[INFO][0m Board live selezionata per injection: TEST-BOARD-1774606634-5
+
+[0;34m[INFO][0m === Compilazione settings board ===
+
+==========================================
+  COMPILAZIONE SETTINGS.JSON PER TUTTE LE BOARD
+==========================================
+
+WSS URL: wss://crossbar.default.svc.cluster.local:8181/
+WAMP Realm: s4t
+
+
+Board: TEST-BOARD-1774606626-1
+  Nota: UUID verrà aggiunto dal cloud alla prima connessione
+  Pod: lightning-rod-test-board-1774606626-1-55465d8bcb-wq4kx
+[INFO] settings.json compilato per board: TEST-BOARD-1774606626-1
+[0;32m  ✅ settings.json compilato[0m
+
+Board: TEST-BOARD-1774606628-2
+  Nota: UUID verrà aggiunto dal cloud alla prima connessione
+  Pod: lightning-rod-test-board-1774606628-2-6969b56b-vjzn6
+[INFO] settings.json compilato per board: TEST-BOARD-1774606628-2
+[0;32m  ✅ settings.json compilato[0m
+
+Board: TEST-BOARD-1774606630-3
+  Nota: UUID verrà aggiunto dal cloud alla prima connessione
+  Pod: lightning-rod-test-board-1774606630-3-64bd579998-t6t8w
+[INFO] settings.json compilato per board: TEST-BOARD-1774606630-3
+[0;32m  ✅ settings.json compilato[0m
+
+Board: TEST-BOARD-1774606632-4
+  Nota: UUID verrà aggiunto dal cloud alla prima connessione
+  Pod: lightning-rod-test-board-1774606632-4-c5bb56bbd-sztsr
+[INFO] settings.json compilato per board: TEST-BOARD-1774606632-4
+[0;32m  ✅ settings.json compilato[0m
+
+Board: TEST-BOARD-1774606634-5
+  Nota: UUID verrà aggiunto dal cloud alla prima connessione
+  Pod: lightning-rod-test-board-1774606634-5-5b7d89c66-79lr2
+[INFO] settings.json compilato per board: TEST-BOARD-1774606634-5
+[0;32m  ✅ settings.json compilato[0m
+
+==========================================
+[0;32m✅ COMPLETATO[0m
+==========================================
+
+Board processate: 5
+Settings.json compilati: 5
+
+[0;32m[OK][0m Compilazione settings board completato
+
+[0;34m[INFO][0m === Allineamento board online ===
+[INFO] Stato board aggiornato da sessioni valide
+code	status	agent
+TEST-BOARD-1774606626-1	online	iotronic-wagent-6c7cc4798b-m56fl
+TEST-BOARD-1774606628-2	online	iotronic-wagent-6c7cc4798b-m56fl
+TEST-BOARD-1774606630-3	online	iotronic-wagent-6c7cc4798b-m56fl
+TEST-BOARD-1774606632-4	online	iotronic-wagent-6c7cc4798b-m56fl
+TEST-BOARD-1774606634-5	online	iotronic-wagent-6c7cc4798b-m56fl
+[0;32m[OK][0m Allineamento board online completato
+
+[0;34m[INFO][0m === Test creazione plugin ===
+
+==========================================
+  TEST CREAZIONE PLUGIN
+==========================================
+
+1. Creazione plugin: test-plugin-1774606811
+plugin.iot.s4t.crossplane.io/test-plugin-1774606811 created
+
+2. Attesa creazione plugin (60 secondi)...
+  [1/12] Ready: False, Synced: True
+  [2/12] Ready: True, Synced: True
+[0;32mPlugin creato con successo![0m
+
+3. Stato finale plugin:
+NAME                     NAME   READY   SYNCED   EXTERNAL-NAME            AGE
+test-plugin-1774606811          True    True     test-plugin-1774606811   11s
+
+4. Verifica nel database:
+uuid	name
+fce8a6b5-4eef-4e99-9e4f-6cb765928e4d	Test Plugin
+
+5. Log Crossplane Provider:
+ Version:}} Status:{ResourceStatus:{ConditionedStatus:{Conditions:[{Type:Ready Status:False LastTransitionTime:2026-03-27 10:20:13 +0000 UTC Reason:Creating Message: ObservedGeneration:0} {Type:Synced Status:True LastTransitionTime:2026-03-27 10:20:13 +0000 UTC Reason:ReconcileSuccess Message: ObservedGeneration:0}]} ObservedStatus:{ObservedGeneration:0}} AtProvider:{Name:}}}Observing: &{TypeMeta:{Kind:Plugin APIVersion:iot.s4t.crossplane.io/v1alpha1} ObjectMeta:{Name:test-plugin-1774606811 GenerateName: Namespace: SelfLink: UID:ae5e9c16-515c-4081-8769-c7bc2958dc3a ResourceVersion:5018 Generation:2 CreationTimestamp:2026-03-27 10:20:11 +0000 UTC DeletionTimestamp:<nil> DeletionGracePeriodSeconds:<nil> Labels:map[] Annotations:map[crossplane.io/external-create-pending:2026-03-27T10:20:13Z crossplane.io/external-create-succeeded:2026-03-27T10:20:13Z crossplane.io/external-name:test-plugin-1774606811 kubectl.kubernetes.io/last-applied-configuration:{"apiVersion":"iot.s4t.crossplane.io/v1alpha1","kind":"Plugin","metadata":{"annotations":{},"name":"test-plugin-1774606811"},"spec":{"deletionPolicy":"Delete","forProvider":{"code":"from iotronic_lightningrod.modules.plugins import Plugin\nfrom oslo_log import log as logging\nimport time\n\nLOG = logging.getLogger(__name__)\n\nclass Worker(Plugin.Plugin):\n    def __init__(self, uuid, name, q_result=None, params=None):\n        super(Worker, self).__init__(uuid, name, q_result, params)\n        \n    def run(self):\n        LOG.info(f\"Plugin {self.name} started\")\n        LOG.info(f\"Input parameters: {self.params}\")\n        while self._is_running:\n            LOG.info(\"Plugin running...\")\n            time.sleep(5)\n        LOG.info(\"Plugin stopped\")\n        if self.q_result:\n            self.q_result.put(\"SUCCESS\")\n","name":"Test Plugin","parameters":{"test":true}},"providerConfigRef":{"name":"s4t-provider-domain"}}}
+] OwnerReferences:[] Finalizers:[finalizer.managedresource.crossplane.io] ManagedFields:[{Manager:kubectl-client-side-apply Operation:Update APIVersion:iot.s4t.crossplane.io/v1alpha1 Time:2026-03-27 10:20:11 +0000 UTC FieldsType:FieldsV1 FieldsV1:{"f:metadata":{"f:annotations":{".":{},"f:kubectl.kubernetes.io/last-applied-configuration":{}}},"f:spec":{".":{},"f:deletionPolicy":{},"f:forProvider":{".":{},"f:code":{},"f:name":{},"f:parameters":{".":{},"f:test":{}}},"f:managementPolicies":{},"f:providerConfigRef":{".":{},"f:name":{}}}} Subresource:} {Manager:crossplane-s4t-provider Operation:Update APIVersion:iot.s4t.crossplane.io/v1alpha1 Time:2026-03-27 10:20:13 +0000 UTC FieldsType:FieldsV1 FieldsV1:{"f:metadata":{"f:annotations":{"f:crossplane.io/external-create-pending":{},"f:crossplane.io/external-create-succeeded":{},"f:crossplane.io/external-name":{}},"f:finalizers":{".":{},"v:\"finalizer.managedresource.crossplane.io\"":{}}},"f:spec":{"f:forProvider":{"f:uuid":{}}}} Subresource:} {Manager:crossplane-s4t-provider Operation:Update APIVersion:iot.s4t.crossplane.io/v1alpha1 Time:2026-03-27 10:20:16 +0000 UTC FieldsType:FieldsV1 FieldsV1:{"f:status":{".":{},"f:atProvider":{".":{},"f:name":{}},"f:conditions":{".":{},"k:{\"type\":\"Ready\"}":{".":{},"f:lastTransitionTime":{},"f:reason":{},"f:status":{},"f:type":{}},"k:{\"type\":\"Synced\"}":{".":{},"f:lastTransitionTime":{},"f:reason":{},"f:status":{},"f:type":{}}}}} Subresource:status}]} Spec:{ResourceSpec:{WriteConnectionSecretToReference:<nil> PublishConnectionDetailsTo:<nil> ProviderConfigReference:0xc0001b75d8 ManagementPolicies:[*] DeletionPolicy:Delete} ForProvider:{Uuid:fce8a6b5-4eef-4e99-9e4f-6cb765928e4d Name:Test Plugin Parameters:{Raw:[123 34 116 101 115 116 34 58 116 114 117 101 125] Object:<nil>} Code:from iotronic_lightningrod.modules.plugins import Plugin
+class Worker(Plugin.Plugin):
+        LOG.info(f"Plugin {self.name} started")
+            LOG.info("Plugin running...")
+        LOG.info("Plugin stopped")
+
+==========================================
+Test completato!
+==========================================
+[0;32m[OK][0m Test creazione plugin completato
+
+[0;34m[INFO][0m === Injection plugin via CRD ===
+
+==========================================
+  INJECTING PLUGIN USING CRD
+==========================================
+
+Board Code: TEST-BOARD-1774606634-5
+Plugin Name: test-plugin-crd
+
+Board UUID: 12f8aeb6-d3d2-4074-9074-5dd62922d3d5
+[0;31mERROR: Plugin 'test-plugin-crd' not found or UUID not available[0m
+
+Available plugins:
+NAME                     NAME   READY   SYNCED   EXTERNAL-NAME            AGE
+test-plugin-1774606811          True    True     test-plugin-1774606811   12s
+
+Plugin details:

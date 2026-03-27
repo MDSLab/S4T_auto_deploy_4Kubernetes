@@ -1,0 +1,120 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.35.0 (9532ceef3)
+  labels:
+    io.kompose.service: iotronic-db
+  name: iotronic-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: iotronic-db
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert
+        kompose.version: 1.35.0 (9532ceef3)
+      labels:
+        io.kompose.service: iotronic-db
+    spec:
+      containers:
+        - args:
+            - |
+              set -e
+
+              echo "Verifica inizializzazione del database..."
+              if [ ! -d "/var/lib/mysql/mysql" ]; then
+                  echo "Inizializzazione del database in corso..."
+                  mysql_install_db --user=mysql --ldata=/var/lib/mysql
+              fi
+
+              echo "Avvio di MariaDB..."
+              mysqld_safe --bind-address=0.0.0.0 \
+                     --max_connections=4096 \
+                     --collation-server=utf8_general_ci \
+                     --character-set-server=utf8 \
+                     --innodb-buffer-pool-size=1G \
+                     --innodb-flush-log-at-trx-commit=1 \
+                     --innodb-file-per-table=1 &
+              PID_MYSQL=$!
+
+              echo "Attesa che MariaDB sia pronto..."
+              while ! mysqladmin ping -h "127.0.0.1" --silent; do
+                  echo "MariaDB non ancora pronto. Controllo i log..."
+                  sleep 2
+              done
+
+              echo "MariaDB è pronto. Verifica database..."
+
+              if mysql -uroot -p${MYSQL_ROOT_PASSWORD} -e "USE ${MYSQL_DATABASE};" 2>/dev/null; then
+                  echo "Il database '${MYSQL_DATABASE}' esiste già."
+              else
+                  echo "Creazione del database e dell'utente..."
+                  mysql -uroot -p${MYSQL_ROOT_PASSWORD} <<EOF
+              CREATE DATABASE IF NOT EXISTS ${MYSQL_DATABASE};
+              CREATE USER IF NOT EXISTS '${MYSQL_USER}'@'%' IDENTIFIED BY '${MYSQL_PASSWORD}';
+              CREATE USER 'root'@'%' IDENTIFIED BY '${MYSQL_ROOT_PASSWORD}';
+              GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' WITH GRANT OPTION;
+              GRANT ALL PRIVILEGES ON keystone.* TO 'root'@'%';
+              GRANT ALL PRIVILEGES ON iotronic.* TO 'root'@'%';
+              GRANT ALL PRIVILEGES ON ${MYSQL_DATABASE}.* TO '${MYSQL_USER}'@'%';
+              FLUSH PRIVILEGES;
+              EOF
+              fi
+
+              echo "Allineamento utenti DB richiesti da Stack4Things..."
+              mysql -uroot -p${MYSQL_ROOT_PASSWORD} <<EOF
+              CREATE DATABASE IF NOT EXISTS iotronic;
+              CREATE USER IF NOT EXISTS '${MYSQL_USER}'@'%' IDENTIFIED BY '${MYSQL_PASSWORD}';
+              CREATE USER IF NOT EXISTS '${MYSQL_USER}'@'localhost' IDENTIFIED BY '${MYSQL_PASSWORD}';
+              GRANT ALL PRIVILEGES ON iotronic.* TO '${MYSQL_USER}'@'%';
+              GRANT ALL PRIVILEGES ON iotronic.* TO '${MYSQL_USER}'@'localhost';
+              FLUSH PRIVILEGES;
+              EOF
+
+              echo "MariaDB avviato correttamente!"
+              wait $PID_MYSQL
+          command:
+            - /bin/bash
+            - -c
+          env:
+            - name: MYSQL_DATABASE
+              value: iotronic
+            - name: MYSQL_PASSWORD
+              value: unime
+            - name: MYSQL_ROOT_PASSWORD
+              value: s4t
+            - name: MYSQL_USER
+              value: iotronic
+          image: mariadb:focal
+          livenessProbe:
+            exec:
+              command:
+                - mysqladmin
+                - ping
+                - -h
+                - localhost
+                - -u
+                - root
+                - -ps4t
+            failureThreshold: 5
+            initialDelaySeconds: 40
+            periodSeconds: 10
+            timeoutSeconds: 5
+          name: iotronic-db
+          ports:
+            - containerPort: 3306
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /var/lib/mysql
+              name: iotronic-db-data
+      restartPolicy: Always
+      volumes:
+        - name: iotronic-db-data
+          persistentVolumeClaim:
+            claimName: iotronic-db-data

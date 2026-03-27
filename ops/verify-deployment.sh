@@ -11,6 +11,14 @@
 
 set -euo pipefail
 
+ENV_FILE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/.env"
+if [ -f "$ENV_FILE" ]; then
+  set -a
+  # shellcheck disable=SC1090
+  source "$ENV_FILE"
+  set +a
+fi
+
 ### Colors ###
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -278,8 +286,8 @@ echo -e "${GREEN}Dashboard:${NC}"
 NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}' 2>/dev/null || echo "localhost")
 NODE_PORT=$(kubectl get svc iotronic-ui-direct -n default -o jsonpath='{.spec.ports[0].nodePort}' 2>/dev/null || echo "31123")
 echo "  URL: http://$NODE_IP:$NODE_PORT/horizon"
-echo "  Username: admin"
-echo "  Password: s4t"
+echo "  Username: ${STACK4THINGS_ADMIN_USER:-admin}"
+echo "  Password: ${STACK4THINGS_ADMIN_PASSWORD:-s4t}"
 
 LB_IP=$(kubectl get svc istio-ingress -n istio-ingress -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || echo "")
 if [ -n "$LB_IP" ]; then

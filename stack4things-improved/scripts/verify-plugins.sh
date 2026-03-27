@@ -2,6 +2,16 @@
 
 set -euo pipefail
 
+ENV_FILE="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/.env"
+if [ -f "$ENV_FILE" ]; then
+  set -a
+  # shellcheck disable=SC1090
+  source "$ENV_FILE"
+  set +a
+fi
+
+: "${IOTRONIC_DB_PASSWORD:?IOTRONIC_DB_PASSWORD is required in .env}"
+
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
@@ -30,7 +40,7 @@ echo ""
 echo "2. Plugin nel database:"
 DB_POD=$(kubectl get pod -n default -l io.kompose.service=iotronic-db -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
 if [ -n "$DB_POD" ]; then
-    kubectl exec -n default "$DB_POD" -- mysql -h127.0.0.1 -uiotronic -punime iotronic -e "SELECT uuid, name FROM plugins LIMIT 10;" 2>/dev/null || echo "  Errore accesso database"
+    kubectl exec -n default "$DB_POD" -- mysql -h127.0.0.1 -uiotronic -p"${IOTRONIC_DB_PASSWORD}" iotronic -e "SELECT uuid, name FROM plugins LIMIT 10;" 2>/dev/null || echo "  Errore accesso database"
 else
     echo "  Database pod non trovato"
 fi
@@ -38,7 +48,7 @@ echo ""
 
 echo "3. Plugin iniettati nelle board:"
 if [ -n "$DB_POD" ]; then
-    kubectl exec -n default "$DB_POD" -- mysql -h127.0.0.1 -uiotronic -punime iotronic -e "
+    kubectl exec -n default "$DB_POD" -- mysql -h127.0.0.1 -uiotronic -p"${IOTRONIC_DB_PASSWORD}" iotronic -e "
         SELECT 
             b.name as board_name,
             b.code as board_code,

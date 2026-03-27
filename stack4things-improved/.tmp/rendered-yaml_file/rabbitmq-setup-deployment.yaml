@@ -1,0 +1,29 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.35.0 (9532ceef3)
+  labels:
+    io.kompose.service: rabbitmq-setup
+  name: rabbitmq-setup
+spec:
+  backoffLimit: 1
+  ttlSecondsAfterFinished: 300
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert
+        kompose.version: 1.35.0 (9532ceef3)
+      labels:
+        io.kompose.service: rabbitmq-setup
+    spec:
+      containers:
+        - args:
+            - echo "RabbitMQ setup job completed"
+          command:
+            - /bin/sh
+            - -c
+          image: rabbitmq:3.7-management
+          name: rabbitmq-setup
+      restartPolicy: Never

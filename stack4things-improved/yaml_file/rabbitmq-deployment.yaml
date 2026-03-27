@@ -25,9 +25,9 @@ spec:
       containers:
         - env:
             - name: RABBITMQ_DEFAULT_PASS
-              value: unime
+              value: "${RABBITMQ_DEFAULT_PASSWORD}"
             - name: RABBITMQ_DEFAULT_USER
-              value: openstack
+              value: "${RABBITMQ_DEFAULT_USER}"
           image: rabbitmq:3.7-management
           name: rabbitmq
           ports:

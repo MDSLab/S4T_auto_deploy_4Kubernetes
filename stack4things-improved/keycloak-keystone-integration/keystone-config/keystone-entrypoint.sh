@@ -3,6 +3,10 @@ set -e
 
 MARKER_FILE=/etc/keystone/.bootstrapped
 
+: "${KEYSTONE_ENTRYPOINT_ADMIN_PASSWORD:?KEYSTONE_ENTRYPOINT_ADMIN_PASSWORD is required}"
+: "${KEYSTONE_ENTRYPOINT_IOTRONIC_USER_PASSWORD:?KEYSTONE_ENTRYPOINT_IOTRONIC_USER_PASSWORD is required}"
+: "${S4T_PLATFORM_USER_PASSWORD:?S4T_PLATFORM_USER_PASSWORD is required}"
+
 echo ">>> Keystone entrypoint avviato"
 
 if [ ! -f "$MARKER_FILE" ]; then
@@ -18,7 +22,7 @@ if [ ! -f "$MARKER_FILE" ]; then
   keystone-manage credential_setup --keystone-user keystone --keystone-group keystone
 
   echo ">>> keystone-manage bootstrap"
-  keystone-manage bootstrap --bootstrap-password admin \
+  keystone-manage bootstrap --bootstrap-password "${KEYSTONE_ENTRYPOINT_ADMIN_PASSWORD}" \
     --bootstrap-admin-url http://localhost:5000/v3/ \
     --bootstrap-internal-url http://localhost:5000/v3/ \
     --bootstrap-public-url http://localhost:5000/v3/ \
@@ -42,7 +46,7 @@ if [ ! -f "$MARKER_FILE" ]; then
 
   echo ">>> Esporto variabili OS_* (come da guida)"
   export OS_USERNAME=admin
-  export OS_PASSWORD=admin
+  export OS_PASSWORD="${KEYSTONE_ENTRYPOINT_ADMIN_PASSWORD}"
   export OS_PROJECT_NAME=admin
   export OS_USER_DOMAIN_NAME=Default
   export OS_PROJECT_DOMAIN_NAME=Default
@@ -101,7 +105,7 @@ if [ ! -f "$MARKER_FILE" ]; then
 
   echo '[INFO] Iotronic User Create...'
   openstack user create iotronic \
-    --password unime || true
+    --password "${KEYSTONE_ENTRYPOINT_IOTRONIC_USER_PASSWORD}" || true
 
   echo '[INFO] Iotronic roles...'
   openstack role create admin_iot_project || true
@@ -113,7 +117,7 @@ if [ ! -f "$MARKER_FILE" ]; then
   openstack role add --project admin --user admin admin_iot_project || true
 
   openstack user create s4t-platform \
-  --password platform-secret \
+  --password "${S4T_PLATFORM_USER_PASSWORD}" \
   --domain Default || true
 
   # Gruppi specifici iot-lab nel dominio federated_domain

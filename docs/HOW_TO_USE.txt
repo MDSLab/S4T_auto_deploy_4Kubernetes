@@ -88,8 +88,8 @@ Una volta completato il setup, accedi a:
 URL: http://<LoadBalancer-IP>/horizon
      oppure http://<Node-IP>:31123/horizon
 
-Username: admin
-Password: s4t
+Username: (da `.env`: `STACK4THINGS_ADMIN_USER`)
+Password: (da `.env`: `STACK4THINGS_ADMIN_PASSWORD`)
 
 Lo script mostra automaticamente l'URL corretto al termine.
 
@@ -178,7 +178,7 @@ Infrastructure-as-Code:
 
 Per PRODUZIONE devi:
   1. Sostituire certificati self-signed
-  2. Cambiare credenziali di default (admin/s4t, admin/admin)
+  2. Cambiare credenziali di default (vedi `.env`)
   3. Configurare RBAC proprietà
   4. Abilitare network policies
   5. Configurare proper logging
@@ -218,7 +218,7 @@ s4t_crossplane_deployment/
 4. ☐ Aspetta 5-15 minuti
 5. ☐ Copia URL visualizzato (o esegui: ./verify-deployment.sh)
 6. ☐ Apri URL in browser
-7. ☐ Login: admin / s4t
+7. ☐ Login: (da `.env` — `STACK4THINGS_ADMIN_USER` / `STACK4THINGS_ADMIN_PASSWORD`)
 8. ☐ Goditi! 🎉
 
 ═══════════════════════════════════════════════════════════════════════════════
