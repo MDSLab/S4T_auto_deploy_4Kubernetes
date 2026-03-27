@@ -164,6 +164,17 @@ normalize_target_repo() {
     | tr -cd 'A-Za-z0-9._-'
 }
 
+strip_source_namespace() {
+  local image_no_registry="$1"
+
+  # Remove first path segment (typically source user/org) from destination naming.
+  if [[ "${image_no_registry}" == */* ]]; then
+    echo "${image_no_registry#*/}"
+  else
+    echo "${image_no_registry}"
+  fi
+}
+
 image_allowed_by_user_filter() {
   local image="$1"
 
@@ -253,7 +264,10 @@ mirror_image() {
   fi
 
   local repo
-  repo="$(normalize_target_repo "${base_no_registry}")"
+  local no_source_namespace
+  no_source_namespace="$(strip_source_namespace "${base_no_registry}")"
+
+  repo="$(normalize_target_repo "${no_source_namespace}")"
   local dst="docker.io/${DEST_NAMESPACE}/${repo}:${tag}"
 
   if [[ -n "${SEEN_DESTS[${dst}]+x}" ]]; then
