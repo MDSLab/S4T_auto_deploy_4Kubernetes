@@ -7,7 +7,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-NEW_USER=""
+DEST_NAMESPACE=""
+LOGIN_USER=""
 IMAGES_FILE=""
 OUTPUT_FILE=""
 FROM_REPO=false
@@ -18,10 +19,12 @@ declare -A SEEN_DESTS=()
 usage() {
   cat <<'EOF'
 Uso:
-  mirror-images-dockerhub.sh --user <dockerhub_user> [opzioni]
+  mirror-images-dockerhub.sh --namespace <dockerhub_namespace> [opzioni]
 
 Opzioni:
-  --user <name>            Namespace Docker Hub di destinazione (obbligatorio)
+  --namespace <name>       Namespace Docker Hub di destinazione (utente o organization, obbligatorio)
+  --user <name>            Alias retrocompatibile di --namespace
+  --login-user <name>      Account personale usato per login Docker Hub (opzionale)
   --images-file <path>     File con elenco immagini (una per riga)
   --from-repo              Estrae immagini da manifest/Dockerfile/compose del repository
   --output-file <path>     Dove salvare l'inventory (default: ./images.txt)
@@ -30,13 +33,13 @@ Opzioni:
   -h, --help               Mostra questo aiuto
 
 Esempi:
-  ./scripts/mirror-images-dockerhub.sh --user mioaccount --from-repo
-  ./scripts/mirror-images-dockerhub.sh --user mioaccount --images-file ./images.txt
-  ./scripts/mirror-images-dockerhub.sh --user mioaccount --from-repo --only-users lucadagati,mariorossi851234
-  ./scripts/mirror-images-dockerhub.sh --user mioaccount --from-repo --dry-run
+  ./scripts/mirror-images-dockerhub.sh --namespace mioaccount --from-repo
+  ./scripts/mirror-images-dockerhub.sh --namespace mia-org --login-user mioaccount --images-file ./images.txt
+  ./scripts/mirror-images-dockerhub.sh --namespace mia-org --from-repo --only-users lucadagati,mariorossi851234
+  ./scripts/mirror-images-dockerhub.sh --namespace mia-org --from-repo --dry-run
 
 Prerequisiti:
-  - docker login -u <dockerhub_user>
+  - docker login -u <account_personale>
   - skopeo installato
 EOF
 }
@@ -64,8 +67,16 @@ require_cmd() {
 parse_args() {
   while [[ $# -gt 0 ]]; do
     case "$1" in
+      --namespace)
+        DEST_NAMESPACE="${2:-}"
+        shift 2
+        ;;
       --user)
-        NEW_USER="${2:-}"
+        DEST_NAMESPACE="${2:-}"
+        shift 2
+        ;;
+      --login-user)
+        LOGIN_USER="${2:-}"
         shift 2
         ;;
       --images-file)
@@ -100,8 +111,8 @@ parse_args() {
     esac
   done
 
-  if [[ -z "${NEW_USER}" ]]; then
-    err "Specifica --user <dockerhub_user>"
+  if [[ -z "${DEST_NAMESPACE}" ]]; then
+    err "Specifica --namespace <dockerhub_namespace>"
     usage
     exit 1
   fi
@@ -243,7 +254,7 @@ mirror_image() {
 
   local repo
   repo="$(normalize_target_repo "${base_no_registry}")"
-  local dst="docker.io/${NEW_USER}/${repo}:${tag}"
+  local dst="docker.io/${DEST_NAMESPACE}/${repo}:${tag}"
 
   if [[ -n "${SEEN_DESTS[${dst}]+x}" ]]; then
     log "Skip duplicato destinazione: ${dst}"
@@ -348,7 +359,11 @@ main() {
   fi
 
   if [[ "${DRY_RUN}" == false ]]; then
-    log "Assicurati di aver eseguito: docker login -u ${NEW_USER}"
+    if [[ -n "${LOGIN_USER}" ]]; then
+      log "Assicurati di aver eseguito: docker login -u ${LOGIN_USER}"
+    else
+      log "Assicurati di aver eseguito: docker login -u <account_personale_con_permessi_su_${DEST_NAMESPACE}>"
+    fi
   fi
 
   while IFS= read -r image; do
