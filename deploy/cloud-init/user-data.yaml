@@ -57,6 +57,12 @@ write_files:
       fi
 
       cd "$REPO_DIR"
+
+      if [ -f ".env.example" ] && [ ! -f ".env" ]; then
+        cp ".env.example" ".env"
+        echo "[INFO] Creato .env da .env.example" | tee -a "$LOG"
+      fi
+
       chmod +x ops/setup-all.sh
 
       echo "[INFO] Avvio setup-all.sh" | tee -a "$LOG"
