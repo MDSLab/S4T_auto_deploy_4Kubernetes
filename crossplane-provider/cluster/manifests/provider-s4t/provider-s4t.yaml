@@ -3,7 +3,7 @@ kind: Provider
 metadata:
   annotations:
     kubectl.kubernetes.io/last-applied-configuration: |
-      {"apiVersion":"pkg.crossplane.io/v1","kind":"Provider","metadata":{"annotations":{"meta.crossplane.io/description":"A s4t that can be used to create Crossplane providers.\n","meta.crossplane.io/license":"Apache-2.0","meta.crossplane.io/maintainer":"Crossplane Maintainers \u003cinfo@crossplane.io\u003e","meta.crossplane.io/source":"github.com/crossplane/provider-s4t"},"name":"provider-s4t"},"spec":{"package":"docker.io/mariorossi851234/provider-s4t:latest","packagePullPolicy":"IfNotPresent"}}
+      {"apiVersion":"pkg.crossplane.io/v1","kind":"Provider","metadata":{"annotations":{"meta.crossplane.io/description":"A s4t that can be used to create Crossplane providers.\n","meta.crossplane.io/license":"Apache-2.0","meta.crossplane.io/maintainer":"Crossplane Maintainers \u003cinfo@crossplane.io\u003e","meta.crossplane.io/source":"github.com/crossplane/provider-s4t"},"name":"provider-s4t"},"spec":{"package":"docker.io/mdslab/provider-s4t:latest","packagePullPolicy":"IfNotPresent"}}
     meta.crossplane.io/description: |
       A s4t that can be used to create Crossplane providers.
     meta.crossplane.io/license: Apache-2.0
@@ -16,7 +16,7 @@ metadata:
   uid: 236e7623-2ff4-4f2b-ac81-1df62fd739cb
 spec:
   ignoreCrossplaneConstraints: false
-  package: docker.io/mariorossi851234/provider-s4t:latest
+  package: docker.io/mdslab/provider-s4t:latest
   packagePullPolicy: IfNotPresent
   revisionActivationPolicy: Automatic
   revisionHistoryLimit: 1
@@ -37,6 +37,6 @@ status:
     reason: ActivePackageRevision
     status: "True"
     type: Installed
-  currentIdentifier: docker.io/mariorossi851234/provider-s4t:latest
+  currentIdentifier: docker.io/mdslab/provider-s4t:latest
   currentRevision: provider-s4t-15fde62d5c75
-  resolvedPackage: docker.io/mariorossi851234/provider-s4t:latest
+  resolvedPackage: docker.io/mdslab/provider-s4t:latest

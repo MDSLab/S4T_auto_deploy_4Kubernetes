@@ -481,7 +481,7 @@ EOF
     fi
   done
   
-  PROVIDER_IMAGE="docker.io/mariorossi851234/provider-s4t:latest"
+  PROVIDER_IMAGE="docker.io/mdslab/provider-s4t:latest"
 
   if [ -n "$CROSSPLANE_PROVIDER_DIR" ] && [ -d "$CROSSPLANE_PROVIDER_DIR" ]; then
     echo "📦 Installing Crossplane Provider S4T from: $CROSSPLANE_PROVIDER_DIR"

@@ -83,7 +83,7 @@ spec:
     spec:
       containers:
       - name: keystone
-        image: lucadagati/iotronic-keystone:latest
+        image: docker.io/mdslab/iotronic-keystone:latest
         imagePullPolicy: IfNotPresent
         command:
         - /bin/sh

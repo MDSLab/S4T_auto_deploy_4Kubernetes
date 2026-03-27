@@ -4,5 +4,5 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 images:
 - name: controller
-  newName: docker.io/mariorossi851234/s4t-rbac-operator
+  newName: docker.io/mdslab/s4t-rbac-operator
   newTag: latest

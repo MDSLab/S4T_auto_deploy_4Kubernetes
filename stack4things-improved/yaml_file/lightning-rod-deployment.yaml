@@ -30,7 +30,7 @@ spec:
           command:
             - /bin/sh
             - -c
-          image: lucadagati/lrod:compose
+          image: docker.io/mdslab/lrod:compose
           name: lightning-rod
           ports:
             - containerPort: 1474

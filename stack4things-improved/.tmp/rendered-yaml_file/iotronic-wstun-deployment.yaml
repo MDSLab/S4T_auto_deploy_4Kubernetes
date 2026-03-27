@@ -42,7 +42,7 @@ spec:
           command:
             - /bin/sh
             - -c
-          image: lucadagati/iotronic-wstun:latest
+          image: docker.io/mdslab/iotronic-wstun:latest
           name: iotronic-wstun
           ports:
             - containerPort: 8080

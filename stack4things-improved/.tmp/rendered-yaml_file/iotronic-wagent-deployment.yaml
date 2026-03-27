@@ -50,7 +50,7 @@ spec:
               value: admin
             - name: OS_USER_DOMAIN_NAME
               value: Default
-          image: lucadagati/iotronic-wagent:latest
+          image: docker.io/mdslab/iotronic-wagent:latest
           name: iotronic-wagent
           volumeMounts:
             - mountPath: /etc/iotronic

@@ -9,6 +9,6 @@ metadata:
     meta.crossplane.io/description: |
       A s4t that can be used to create Crossplane providers.
 spec:
-  package: docker.io/mariorossi851234/provider-s4t:latest
+  package: docker.io/mdslab/provider-s4t:latest
   packagePullPolicy: IfNotPresent 
   

@@ -87,7 +87,7 @@ spec:
               value: ${STACK4THINGS_ADMIN_USER}
             - name: OS_USER_DOMAIN_NAME
               value: Default
-          image: lucadagati/iotronic-conductor:latest
+          image: docker.io/mdslab/iotronic-conductor:latest
           name: iotronic-conductor
           ports:
             - containerPort: 8812

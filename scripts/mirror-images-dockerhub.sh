@@ -9,6 +9,8 @@ ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 DEST_NAMESPACE=""
 LOGIN_USER=""
+DEST_CREDS=""
+SRC_CREDS=""
 IMAGES_FILE=""
 OUTPUT_FILE=""
 FROM_REPO=false
@@ -25,6 +27,8 @@ Opzioni:
   --namespace <name>       Namespace Docker Hub di destinazione (utente o organization, obbligatorio)
   --user <name>            Alias retrocompatibile di --namespace
   --login-user <name>      Account personale usato per login Docker Hub (opzionale)
+  --dest-creds <u:p|u:t>   Credenziali destinazione per skopeo (user:password o user:token)
+  --src-creds <u:p|u:t>    Credenziali sorgente per pull con skopeo (evita rate limit)
   --images-file <path>     File con elenco immagini (una per riga)
   --from-repo              Estrae immagini da manifest/Dockerfile/compose del repository
   --output-file <path>     Dove salvare l'inventory (default: ./images.txt)
@@ -35,6 +39,8 @@ Opzioni:
 Esempi:
   ./scripts/mirror-images-dockerhub.sh --namespace mioaccount --from-repo
   ./scripts/mirror-images-dockerhub.sh --namespace mia-org --login-user mioaccount --images-file ./images.txt
+  ./scripts/mirror-images-dockerhub.sh --namespace mia-org --dest-creds mioaccount:token_rw --images-file ./images.txt
+  ./scripts/mirror-images-dockerhub.sh --namespace mia-org --src-creds mioaccount:token_rw --dest-creds mioaccount:token_rw --images-file ./images.txt
   ./scripts/mirror-images-dockerhub.sh --namespace mia-org --from-repo --only-users lucadagati,mariorossi851234
   ./scripts/mirror-images-dockerhub.sh --namespace mia-org --from-repo --dry-run
 
@@ -77,6 +83,14 @@ parse_args() {
         ;;
       --login-user)
         LOGIN_USER="${2:-}"
+        shift 2
+        ;;
+      --dest-creds)
+        DEST_CREDS="${2:-}"
+        shift 2
+        ;;
+      --src-creds)
+        SRC_CREDS="${2:-}"
         shift 2
         ;;
       --images-file)
@@ -251,7 +265,8 @@ mirror_image() {
       base="${src}"
       tag="latest"
     fi
-    ref="${src}"
+    # skopeo docker-daemon requires an explicit tag or digest.
+    ref="${base}:${tag}"
   fi
 
   local base_no_registry="${base}"
@@ -280,7 +295,18 @@ mirror_image() {
   if docker image inspect "${ref}" >/dev/null 2>&1; then
     src_transport="docker-daemon:${ref}"
   else
-    src_transport="docker://${ref}"
+    local ref_no_registry="${ref}"
+    if [[ "${ref_no_registry}" == docker.io/* ]]; then
+      ref_no_registry="${ref_no_registry#docker.io/}"
+    elif [[ "${ref_no_registry}" == index.docker.io/* ]]; then
+      ref_no_registry="${ref_no_registry#index.docker.io/}"
+    fi
+
+    if docker image inspect "${ref_no_registry}" >/dev/null 2>&1; then
+      src_transport="docker-daemon:${ref_no_registry}"
+    else
+      src_transport="docker://${ref}"
+    fi
   fi
 
   if [[ "${DRY_RUN}" == true ]]; then
@@ -288,7 +314,15 @@ mirror_image() {
     return 0
   fi
 
-  skopeo copy --all "${src_transport}" "docker://${dst}"
+  if [[ -n "${SRC_CREDS}" && -n "${DEST_CREDS}" ]]; then
+    skopeo copy --all --src-creds "${SRC_CREDS}" --dest-creds "${DEST_CREDS}" "${src_transport}" "docker://${dst}"
+  elif [[ -n "${SRC_CREDS}" ]]; then
+    skopeo copy --all --src-creds "${SRC_CREDS}" "${src_transport}" "docker://${dst}"
+  elif [[ -n "${DEST_CREDS}" ]]; then
+    skopeo copy --all --dest-creds "${DEST_CREDS}" "${src_transport}" "docker://${dst}"
+  else
+    skopeo copy --all "${src_transport}" "docker://${dst}"
+  fi
   echo "[OK] ${ref} -> ${dst}"
 }
 
