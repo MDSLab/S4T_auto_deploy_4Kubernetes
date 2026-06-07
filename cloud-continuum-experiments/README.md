@@ -1,4 +1,4 @@
-# FGCS Reproducibility Artifact: Programmable Cloud Continuum for Distributed CPS
+# Reproducibility Artifact: Programmable Cloud Continuum for Distributed CPS
 
 This repository contains the complete research artifact for the paper "A Programmable Cloud Continuum Infrastructure for Distributed CPS Experimentation". It includes the orchestration scripts, deployment manifests, and sample experimental data required to reproduce the Renewable Energy Community (REC) and AirWatch monitoring use cases.
 
