@@ -1,0 +1,60 @@
+---
+# ServiceEntry to allow outbound traffic to external InfluxDB IP
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: influxdb-external-ip
+  namespace: airwatch
+spec:
+  hosts:
+  - influx.external
+  addresses:
+  - <DATABASE_IP>
+  ports:
+  - number: 30086
+    name: http
+    protocol: HTTP
+  location: MESH_EXTERNAL
+  resolution: STATIC
+  endpoints:
+  - address: <DATABASE_IP>
+    ports:
+      http: 30086
+---
+# DestinationRule for connection pooling
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: influxdb-external-dr
+  namespace: airwatch
+spec:
+  host: influx.external
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 100
+      http:
+        http1MaxPendingRequests: 100
+        http2MaxRequests: 100
+        maxRequestsPerConnection: 2
+    outlierDetection:
+      consecutive5xxErrors: 5
+      interval: 30s
+      baseEjectionTime: 30s
+---
+# VirtualService to route IP-based traffic to the ServiceEntry
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: influxdb-external-vs
+  namespace: airwatch
+spec:
+  hosts:
+  - "<DATABASE_IP>"
+  http:
+  - route:
+    - destination:
+        host: influx.external
+        port:
+          number: 30086
+

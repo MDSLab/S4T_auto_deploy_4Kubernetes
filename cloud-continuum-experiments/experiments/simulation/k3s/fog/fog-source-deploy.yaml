@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: producer-fog
+  namespace: simulation
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: producer-fog
+  template:
+    metadata:
+      labels:
+        app: producer-fog
+    spec:
+      containers:
+      - name: producer
+        image: __MICROSERVICES_IMAGE__
+        command: ["python", "fog/producer.py"]
+        env:
+        - name: EPREM_URL
+          value: "http://<FOG_IP>:31003/data"
+        - name: PRODUCER_ID
+          value: "fog-plant-01"
+        volumeMounts:
+        - name: data
+          mountPath: /data
+      volumes:
+      - name: data
+        emptyDir: {}

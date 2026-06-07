@@ -1,0 +1,141 @@
+# ── ConfigMap: datasource InfluxDB ────────────────────────────────────────
+# Grafana automatically loads datasources from this ConfigMap
+# grazie al sidecar o al provisioning nativo.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-datasources
+  namespace: airwatch-remote
+  labels:
+    grafana_datasource: "1"
+data:
+  influxdb.yaml: |
+    apiVersion: 1
+    datasources:
+      - name: AirWatch-InfluxDB
+        type: influxdb
+        access: proxy
+        url: http://<DATABASE_IP>:30086
+        database: airwatch
+        user: admin
+        secureJsonData:
+          password: changeme
+        isDefault: true
+        editable: false
+---
+# ── ConfigMap: dashboard provisioning ─────────────────────────────────────
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-provider
+  namespace: airwatch-remote
+data:
+  provider.yaml: |
+    apiVersion: 1
+    providers:
+      - name: airwatch
+        type: file
+        options:
+          path: /var/lib/grafana/dashboards
+---
+# ── Deployment Grafana ────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: airwatch-remote
+  labels:
+    app: grafana
+    component: remote
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+        component: remote
+    spec:
+      containers:
+        - name: grafana
+          image: grafana/grafana:10.4.2
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+          env:
+            - name: GF_SECURITY_ADMIN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-secrets
+                  key: GRAFANA_USER
+            - name: GF_SECURITY_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-secrets
+                  key: GRAFANA_PASSWORD
+            - name: GF_AUTH_ANONYMOUS_ENABLED
+              value: "false"
+            - name: GF_SERVER_ROOT_URL
+              value: "http://grafana.airwatch-remote.svc.cluster.local:3000"
+          volumeMounts:
+            - name: datasources
+              mountPath: /etc/grafana/provisioning/datasources
+            - name: dashboard-provider
+              mountPath: /etc/grafana/provisioning/dashboards
+            - name: grafana-storage
+              mountPath: /var/lib/grafana
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "300m"
+      volumes:
+        - name: datasources
+          configMap:
+            name: grafana-datasources
+        - name: dashboard-provider
+          configMap:
+            name: grafana-dashboard-provider
+        - name: grafana-storage
+          emptyDir: {}   # In production: PersistentVolumeClaim
+---
+# ── Secret Grafana ────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Secret
+metadata:
+  name: grafana-secrets
+  namespace: airwatch-remote
+type: Opaque
+stringData:
+  GRAFANA_USER:     "admin"
+  GRAFANA_PASSWORD: "changeme"
+---
+# ── Service Grafana ───────────────────────────────────────────────────────
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  namespace: airwatch-remote
+spec:
+  selector:
+    app: grafana
+  type: ClusterIP
+  ports:
+    - port: 3000
+      targetPort: 3000

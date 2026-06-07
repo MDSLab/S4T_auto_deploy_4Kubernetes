@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: r2
+  namespace: airwatch-remote
+  labels:
+    app: r2
+    component: remote
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: r2
+  template:
+    metadata:
+      labels:
+        app: r2
+        component: remote
+    spec:
+      containers:
+        - name: r2
+          image: mariorossi851234/remote:v1.2.0
+          imagePullPolicy: IfNotPresent
+          args: ["python", "r2_notify.py"]
+          ports:
+            - containerPort: 8010
+          envFrom:
+            - configMapRef:
+                name: airwatch-remote-config
+            - secretRef:
+                name: airwatch-remote-secrets
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8010
+            initialDelaySeconds: 5
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8010
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          resources:
+            requests:
+              memory: "32Mi"
+              cpu: "25m"
+            limits:
+              memory: "64Mi"
+              cpu: "100m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: r2
+  namespace: airwatch-remote
+spec:
+  selector:
+    app: r2
+  # NodePort: r2 must be reachable by both s5 and external edge.
+  type: NodePort
+  ports:
+    - port: 8010
+      targetPort: 8010
+      nodePort: 32010

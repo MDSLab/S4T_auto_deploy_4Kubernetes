@@ -1,0 +1,77 @@
+apiVersion: spark.apache.org/v1
+kind: SparkApplication
+metadata:
+  name: energy-aggregator
+  namespace: simulation
+spec:
+  deploymentMode: ClusterMode
+  runtimeVersions:
+    sparkVersion: "3.5.1"
+  mainClass: "org.apache.spark.deploy.PythonRunner"
+  files: "local:///opt/spark/work-dir/cloud/energy_aggregator.py"
+  pyFiles: ""
+  driverArgs:
+    - "/opt/spark/work-dir/cloud/energy_aggregator.py"
+    - ""
+  sparkConf:
+    spark.kubernetes.container.image: "mariorossi851234/spark-energy:v5-earliest"
+    spark.kubernetes.container.image.pullPolicy: "Always"   # <-- Always: forza pull nuova immagine con JAR inclusi
+    spark.kubernetes.driver.container.image: "mariorossi851234/spark-energy:v5-earliest"
+    spark.kubernetes.executor.container.image: "mariorossi851234/spark-energy:v5-earliest"
+    spark.kubernetes.authenticate.driver.serviceAccountName: "spark"
+    spark.sql.shuffle.partitions: "1"
+    spark.kubernetes.allocation.batch.size: "10"
+    spark.pyspark.python: "python3"
+    spark.kubernetes.file.upload.path: "file:///tmp"
+    spark.executor.instances: "1"
+    spark.driver.cores: "1"
+    spark.executor.cores: "1"
+    spark.kubernetes.driver.request.cores: "100m"
+    spark.kubernetes.executor.request.cores: "100m"
+    # ──────────────────────────────────────────────────────────
+    # RIMOSSA la riga spark.jars.packages: quella causava
+    # il download a runtime e l'AccessDeniedException.
+    # I JAR sono ora fisicamente in /opt/spark/jars nell'immagine.
+    # ──────────────────────────────────────────────────────────
+    spark.streaming.stopGracefullyOnShutdown: "true"
+    spark.sql.streaming.checkpointLocation: "/tmp/checkpoints/energy-aggregator"
+  driverSpec:
+    podTemplateSpec:
+      spec:
+        serviceAccountName: spark
+        containers:
+          - name: spark-driver
+            env:
+              - name: KAFKA_BOOTSTRAP
+                value: "kafka-cluster-kafka-bootstrap:9092"
+              - name: KAFKA_TOPIC
+                value: "production-forecasts"
+              - name: HOME          # Ensure that HOME sia defined in the pod too
+                value: "/home/spark"
+            resources:
+              requests:
+                memory: "256Mi"
+                cpu: "100m"
+              limits:
+                memory: "512Mi"
+                cpu: "500m"
+  executorSpec:
+    podTemplateSpec:
+      spec:
+        containers:
+          - name: spark-executor
+            env:
+              - name: HOME
+                value: "/home/spark"
+            resources:
+              requests:
+                memory: "256Mi"
+                cpu: "100m"
+              limits:
+                memory: "512Mi"
+                cpu: "500m"
+  applicationTolerations:
+    resourceRetainPolicy: Always
+    restartConfig:
+      restartPolicy: OnFailure
+      maxRestartAttempts: 3

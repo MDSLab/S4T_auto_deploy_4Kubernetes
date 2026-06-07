@@ -1,0 +1,39 @@
+FROM apache/spark:3.5.0-python3
+
+USER root
+
+# Pre-install Python dependencies
+RUN pip3 install --no-cache-dir \
+    pyspark==3.5.0 \
+    influxdb==5.3.1 \
+    confluent-kafka==2.3.0
+
+# Download Kafka connector JARs to Spark jars directory
+# This way, no runtime permissions are needed and --packages is avoided
+ENV KAFKA_SQL_JAR="spark-sql-kafka-0-10_2.12-3.5.0.jar"
+ENV KAFKA_CLIENTS_JAR="kafka-clients-3.5.0.jar"
+ENV COMMONS_POOL_JAR="commons-pool2-2.11.1.jar"
+ENV TOKEN_PROVIDER_JAR="spark-token-provider-kafka-0-10_2.12-3.5.0.jar"
+
+WORKDIR /opt/spark/jars
+
+RUN curl -sO https://repo1.maven.org/maven2/org/apache/spark/spark-sql-kafka-0-10_2.12/3.5.0/${KAFKA_SQL_JAR} && \
+    curl -sO https://repo1.maven.org/maven2/org/apache/kafka/kafka-clients/3.5.0/${KAFKA_CLIENTS_JAR} && \
+    curl -sO https://repo1.maven.org/maven2/org/apache/commons/commons-pool2/2.11.1/${COMMONS_POOL_JAR} && \
+    curl -sO https://repo1.maven.org/maven2/org/apache/spark/spark-token-provider-kafka-0-10_2.12/3.5.0/${TOKEN_PROVIDER_JAR}
+
+# Verify that JARs were downloaded correctly
+RUN ls -lh ${KAFKA_SQL_JAR} ${KAFKA_CLIENTS_JAR} ${COMMONS_POOL_JAR} ${TOKEN_PROVIDER_JAR}
+
+# Setup home for spark user
+ENV SPARK_USER_HOME=/home/spark
+RUN mkdir -p ${SPARK_USER_HOME} && chown -R spark:spark ${SPARK_USER_HOME}
+
+WORKDIR /opt/spark/work-dir
+RUN chown -R spark:spark /opt/spark/work-dir
+
+USER spark
+
+# Ivy directory for cached dependencies
+ENV IVY_HOME=${SPARK_USER_HOME}/.ivy2
+RUN mkdir -p ${IVY_HOME}

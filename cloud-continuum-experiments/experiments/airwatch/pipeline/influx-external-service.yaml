@@ -1,0 +1,15 @@
+---
+# ExternalName Service for InfluxDB - makes it DNS-resolvable and Istio-compatible
+apiVersion: v1
+kind: Service
+metadata:
+  name: influxdb-external
+  namespace: airwatch
+spec:
+  type: ExternalName
+  externalName: <DATABASE_IP>
+  ports:
+  - port: 30086
+    targetPort: 30086
+    protocol: TCP
+    name: http

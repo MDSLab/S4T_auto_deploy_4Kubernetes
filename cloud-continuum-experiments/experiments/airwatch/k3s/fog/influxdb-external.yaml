@@ -1,0 +1,15 @@
+# ExternalName Service: cluster pods resolve
+# "influxdb-external.airwatch.svc.cluster.local" e vengono
+# reindirizzati all'IP/hostname dell'InfluxDB esterno.
+# Replace INFLUXDB_EXTERNAL_HOST with actual hostname or IP.
+apiVersion: v1
+kind: Service
+metadata:
+  name: influxdb-external
+  namespace: airwatch
+spec:
+  type: ExternalName
+  externalName: influxdb.default.svc.cluster.local
+  ports:
+    - port: 8086
+      targetPort: 8086

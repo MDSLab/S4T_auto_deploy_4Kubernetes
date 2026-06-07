@@ -1,0 +1,64 @@
+# ── Namespace ─────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: airwatch-cloud
+---
+# ── Apache Spark Kubernetes Operator ─────────────────────────────────────
+# Installa tramite Helm prima di applicare SparkApplication:
+#
+#   helm repo add spark https://apache.github.io/spark-kubernetes-operator
+#   helm repo update
+#   helm install spark-operator spark/spark-kubernetes-operator \
+#     --namespace airwatch-cloud \
+#     --create-namespace
+#
+# Verifica:
+#   kubectl get pods -n airwatch-cloud
+#   kubectl get crd | grep spark
+#
+# ── ServiceAccount per i job Spark ────────────────────────────────────────
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: spark
+  namespace: airwatch-cloud
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: spark-airwatch-role
+subjects:
+  - kind: ServiceAccount
+    name: spark
+    namespace: airwatch-cloud
+roleRef:
+  kind: ClusterRole
+  apiGroup: rbac.authorization.k8s.io
+  name: edit
+---
+# ── ConfigMap configurazione s4 ───────────────────────────────────────────
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: airwatch-cloud-config
+  namespace: airwatch-cloud
+data:
+  KAFKA_BOOTSTRAP: "airwatch-kafka-kafka-bootstrap.kafka.svc.cluster.local:9092"
+  KAFKA_TOPIC:     "airwatch-normalized"
+  KAFKA_GROUP_ID:  "spark-s4-aggregator"
+  INFLUX_HOST:     "<DATABASE_IP>"
+  INFLUX_PORT:     "30086"
+  INFLUX_DB:       "airwatch"
+  AGG_WINDOW_SEC:  "60"
+  CHECKPOINT_DIR:  "/tmp/spark-checkpoints"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: airwatch-cloud-secrets
+  namespace: airwatch-cloud
+type: Opaque
+stringData:
+  INFLUX_USER:     "admin"
+  INFLUX_PASSWORD: "admin"

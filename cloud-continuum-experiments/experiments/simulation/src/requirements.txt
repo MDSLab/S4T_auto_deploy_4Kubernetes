@@ -1,0 +1,6 @@
+flask
+requests
+influxdb-client
+confluent-kafka
+flask-socketio
+eventlet

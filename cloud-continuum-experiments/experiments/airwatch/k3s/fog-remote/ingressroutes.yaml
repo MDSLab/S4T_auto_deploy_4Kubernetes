@@ -1,0 +1,34 @@
+# IngressRoute Traefik to expose Grafana outside the cluster.
+# Traefik è già presente nel tuo cluster (traefik-c5c8bf4ff nel namespace kube-system).
+# Adapt the field "rule" with the actual hostname or IP of the k3s node.
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: grafana-ingress
+  namespace: airwatch-remote
+spec:
+  entryPoints:
+    - web           # porta 80; use websecure (443) with cert-manager in production
+  routes:
+    - match: Host(`grafana.airwatch.local`)   # replace with actual hostname
+      kind: Rule
+      services:
+        - name: grafana
+          port: 3000
+---
+# IngressRoute per r2 — exposed only internally (es. for testing or admin access).
+# In production r2 should not be exposed publicly.
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: r2-ingress
+  namespace: airwatch-remote
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: Host(`r2.airwatch.local`) && PathPrefix(`/alert`)
+      kind: Rule
+      services:
+        - name: r2
+          port: 8010

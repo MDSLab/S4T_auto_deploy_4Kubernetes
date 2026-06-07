@@ -1,0 +1,59 @@
+# ── Gateway ───────────────────────────────────────────────────────────────
+# Aggancia istio-ingressgateway (già presente nel tuo cluster come
+# istio-ingress-6bcb59dc66 nel namespace istio-ingress).
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: airwatch-gateway
+  namespace: airwatch-remote
+spec:
+  selector:
+    istio: ingress   # istio-ingress pod label in your cluster
+  servers:
+    - port:
+        number: 80
+        name: http
+        protocol: HTTP
+      hosts:
+        - grafana.airwatch.local
+        - r2.airwatch.local
+---
+# ── VirtualService: Grafana ───────────────────────────────────────────────
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: grafana-vs
+  namespace: airwatch-remote
+spec:
+  hosts:
+    - grafana.airwatch.local
+  gateways:
+    - airwatch-gateway
+  http:
+    - route:
+        - destination:
+            host: grafana.airwatch-remote.svc.cluster.local
+            port:
+              number: 3000
+---
+# ── VirtualService: r2 ────────────────────────────────────────────────────
+# Exposed only on path /alert — r2 does not have a public UI.
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: r2-vs
+  namespace: airwatch-remote
+spec:
+  hosts:
+    - r2.airwatch.local
+  gateways:
+    - airwatch-gateway
+  http:
+    - match:
+        - uri:
+            prefix: /alert
+      route:
+        - destination:
+            host: r2.airwatch-remote.svc.cluster.local
+            port:
+              number: 8010

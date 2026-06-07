@@ -1,0 +1,60 @@
+# NetworkPolicy for airwatch namespace:
+# - s* pods accept traffic only from other airwatch pods e da airwatch-remote (s5→r2)
+# - No airwatch pod is reachable directly from outside the cluster
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: airwatch-internal
+  namespace: airwatch
+spec:
+  podSelector: {}   # applies to all pods in the namespace
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: airwatch
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: default   # IoTronic/wstun
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: airwatch
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: airwatch-remote
+    # DNS interno k3s
+    - ports:
+        - port: 53
+          protocol: UDP
+---
+# NetworkPolicy for airwatch namespace-remote:
+# - Grafana and r2 accept traffic from airwatch (s5) and from the edge (via wstun/default)
+# - Grafana è esposto via Traefik (kube-system)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: airwatch-remote-policy
+  namespace: airwatch-remote
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: airwatch
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: default
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system   # Traefik
+  egress:
+    - {}   # r2 deve poter raggiungere webhook/email/SMS esterni

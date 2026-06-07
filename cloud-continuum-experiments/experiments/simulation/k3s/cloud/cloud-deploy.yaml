@@ -1,0 +1,219 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: teans
+  namespace: simulation
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: teans
+  template:
+    metadata:
+      labels:
+        app: teans
+    spec:
+      priorityClassName: continuum-infra-critical
+      containers:
+      - name: teans
+        image: __MICROSERVICES_IMAGE__
+        imagePullPolicy: Always
+        command: ["python", "cloud/teans.py"]
+        env:
+        - name: KAFKA_BOOTSTRAP
+          value: "kafka-cluster-kafka-bootstrap:9092"
+        - name: INFLUX_URL
+          value: "http://<DATABASE_IP>:30086/write"
+        - name: INFLUX_DB
+          value: "airwatch"
+        - name: INFLUX_USER
+          value: "admin"
+        - name: INFLUX_PASSWORD
+          value: "admin"
+        resources:
+          requests:
+            cpu: "200m"
+            memory: "512Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+        # Removed startupProbe because teans.py is notspone porte HTTP/TCP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ecrem
+  namespace: simulation
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ecrem
+  template:
+    metadata:
+      labels:
+        app: ecrem
+    spec:
+      priorityClassName: continuum-infra-critical
+      containers:
+      - name: ecrem
+        image: __MICROSERVICES_IMAGE__
+        imagePullPolicy: Always
+        command: ["python", "cloud/ecrem.py"]
+        env:
+        - name: KAFKA_BOOTSTRAP
+          value: "kafka-cluster-kafka-bootstrap:9092"
+        ports:
+        - containerPort: 5000
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "256Mi"
+          limits:
+            cpu: "200m"
+            memory: "256Mi"
+        startupProbe:
+          tcpSocket:
+            port: 5000
+          failureThreshold: 20
+          periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ecrem
+  namespace: simulation
+spec:
+  type: NodePort
+  selector:
+    app: ecrem
+  ports:
+  - port: 5000
+    targetPort: 5000
+    nodePort: 31002
+---
+# Infrastructure: Kafka Cluster (Managed by Strimzi)
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaNodePool
+metadata:
+  name: kafka-nodes
+  namespace: simulation
+  labels:
+    strimzi.io/cluster: kafka-cluster
+spec:
+  replicas: 1
+  roles:
+    - controller
+    - broker
+  storage:
+    type: ephemeral
+---
+apiVersion: kafka.strimzi.io/v1
+kind: Kafka
+metadata:
+  name: kafka-cluster
+  namespace: simulation
+  annotations:
+    strimzi.io/node-pools: enabled
+    strimzi.io/kraft: enabled
+spec:
+  kafka:
+    version: 4.1.0
+    metadataVersion: 4.1-IV1
+    config:
+      offsets.topic.replication.factor: 1
+      transaction.state.log.replication.factor: 1
+      transaction.state.log.min.isr: 1
+      default.replication.factor: 1
+      min.insync.replicas: 1
+    listeners:
+      - name: plain
+        port: 9092
+        type: internal
+        tls: false
+      - name: external
+        port: 9094
+        type: nodeport
+        tls: false
+        configuration:
+          bootstrap:
+            nodePort: 32341
+          brokers:
+            - broker: 0
+              nodePort: 32342
+  entityOperator:
+    topicOperator: {}
+    userOperator: {}
+---
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaTopic
+metadata:
+  name: energy-raw-data
+  namespace: simulation
+  labels:
+    strimzi.io/cluster: kafka-cluster
+spec:
+  partitions: 3
+  replicas: 1
+---
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaTopic
+metadata:
+  name: production-forecasts
+  namespace: simulation
+  labels:
+    strimzi.io/cluster: kafka-cluster
+spec:
+  partitions: 1
+  replicas: 1
+---
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaTopic
+metadata:
+  name: system-events
+  namespace: simulation
+  labels:
+    strimzi.io/cluster: kafka-cluster
+spec:
+  partitions: 1
+  replicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dashboard
+  namespace: simulation
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dashboard
+  template:
+    metadata:
+      labels:
+        app: dashboard
+    spec:
+      containers:
+      - name: dashboard
+        image: __MICROSERVICES_IMAGE__
+        imagePullPolicy: Always
+        command: ["python", "cloud/dashboard.py"]
+        env:
+        - name: KAFKA_BOOTSTRAP
+          value: "kafka-cluster-kafka-bootstrap:9092"
+        ports:
+        - containerPort: 5000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dashboard
+  namespace: simulation
+spec:
+  type: NodePort
+  selector:
+    app: dashboard
+  ports:
+  - port: 5000
+    targetPort: 5000
+    nodePort: 31006

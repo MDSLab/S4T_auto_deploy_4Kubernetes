@@ -1,0 +1,14 @@
+# Aggiungere questa voce al ConfigMap airwatch-config esistente
+# (file: k3s/airwatch/configmap-secret.yaml)
+# sotto la sezione data:
+#
+#   KAFKA_BOOTSTRAP: "airwatch-kafka-kafka-bootstrap.kafka.svc.cluster.local:9092"
+#   KAFKA_TOPIC:     "airwatch-normalized"
+#
+# NOTA: KAFKA_BOOTSTRAP punta al cluster cloud via VPN.
+# Sostituire con l'IP VPN del nodo k3s cloud se il DNS cross-cluster
+# is not' configured:
+#
+#   KAFKA_BOOTSTRAP: "IP_VPN_CLUSTER_CLOUD:9094"
+#
+# La porta 9094 e' il listener NodePort configured in kafka-cluster.yaml.

@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: simulator-edge
+  namespace: simulation
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: simulator-edge
+  template:
+    metadata:
+      labels:
+        app: simulator-edge
+    spec:
+      containers:
+      - name: simulator
+        image: __MICROSERVICES_IMAGE__
+        command: ["python", "edge/lr_edge_sensor_plugin.py"]
+        env:
+        - name: ECREM_URL
+          value: "http://<CLOUD_IP>:31002/collect"
+        - name: HOUSEHOLD_ID
+          value: "edge-house-01"
+        volumeMounts:
+        - name: data
+          mountPath: /data
+      volumes:
+      - name: data
+        emptyDir: {}

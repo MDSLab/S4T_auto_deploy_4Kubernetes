@@ -1,0 +1,96 @@
+apiVersion: spark.apache.org/v1
+kind: SparkApplication
+metadata:
+  name: s4-aggregator
+  namespace: airwatch-cloud
+spec:
+  deploymentMode: ClusterMode
+
+  runtimeVersions:
+    sparkVersion: "3.5.1"
+
+  # Per job Python: script montato da ConfigMap per aggiornamenti rapidi.
+  files: "local:///opt/airwatch/s4_spark.py"
+  pyFiles: "local:///opt/airwatch/s4_spark.py"
+  mainClass: "org.apache.spark.deploy.PythonRunner"
+  driverArgs:
+    - "/opt/airwatch/s4_spark.py"
+
+  sparkConf:
+    spark.kubernetes.container.image: "mariorossi851234/s4-spark:v1.2.0"
+    spark.kubernetes.container.image.pullPolicy: "IfNotPresent"
+    spark.kubernetes.driver.container.image: "mariorossi851234/s4-spark:v1.2.0"
+    spark.kubernetes.executor.container.image: "mariorossi851234/s4-spark:v1.2.0"
+    spark.driver.cores: "1"
+    spark.executor.cores: "1"
+    spark.kubernetes.driver.request.cores: "250m"
+    spark.kubernetes.executor.request.cores: "250m"
+    spark.kubernetes.driver.limit.cores: "1"
+    spark.kubernetes.executor.limit.cores: "1"
+    spark.jars.packages: "org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.1"
+    spark.jars.ivy: "/tmp/.ivy2"
+    spark.ui.enabled: "true"
+    spark.ui.heapHistogramEnabled: "false"
+    spark.kubernetes.authenticate.driver.serviceAccountName: "spark"
+    spark.sql.shuffle.partitions: "4"
+    spark.streaming.stopGracefullyOnShutdown: "true"
+
+  driverSpec:
+    podTemplateSpec:
+      spec:
+        serviceAccountName: spark
+        volumes:
+          - name: s4-script
+            configMap:
+              name: s4-spark-script
+              items:
+                - key: s4_spark.py
+                  path: s4_spark.py
+        containers:
+          - name: spark-driver
+            workingDir: /tmp
+            volumeMounts:
+              - name: s4-script
+                mountPath: /opt/airwatch/s4_spark.py
+                subPath: s4_spark.py
+            resources:
+              requests:
+                memory: "512Mi"
+                cpu: "250m"
+            envFrom:
+              - configMapRef:
+                  name: airwatch-cloud-config
+              - secretRef:
+                  name: airwatch-cloud-secrets
+
+  executorSpec:
+    podTemplateSpec:
+      spec:
+        volumes:
+          - name: s4-script
+            configMap:
+              name: s4-spark-script
+              items:
+                - key: s4_spark.py
+                  path: s4_spark.py
+        containers:
+          - name: spark-executor
+            workingDir: /tmp
+            volumeMounts:
+              - name: s4-script
+                mountPath: /opt/airwatch/s4_spark.py
+                subPath: s4_spark.py
+            resources:
+              requests:
+                memory: "512Mi"
+                cpu: "250m"
+            envFrom:
+              - configMapRef:
+                  name: airwatch-cloud-config
+              - secretRef:
+                  name: airwatch-cloud-secrets
+
+  applicationTolerations:
+    resourceRetainPolicy: Always
+    restartConfig:
+      restartPolicy: Never
